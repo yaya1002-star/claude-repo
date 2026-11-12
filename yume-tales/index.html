@@ -137,7 +137,7 @@ svg { display: block; }
 /* ---------- play screen ---------- */
 #play { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column; background: var(--bg); }
 #play[hidden] { display: none !important; }
-.playbar { flex: none; display: grid; grid-template-columns: 38px minmax(0, 1fr) 38px; align-items: center; gap: 8px; padding-block: 8px; border-bottom: 1px solid var(--line); }
+.playbar { flex: none; display: grid; grid-template-columns: 78px minmax(0, 1fr) 78px; align-items: center; gap: 8px; padding-block: 8px; border-bottom: 1px solid var(--line); }
 .playbar .t { text-align: center; min-width: 0; }
 .playbar .t b { display: block; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .playbar .t small { color: var(--muted); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
@@ -210,6 +210,32 @@ svg { display: block; }
 .statrow span { color: var(--muted); font-size: 12px; }
 .toast { position: absolute; left: 50%; bottom: 90px; transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-size: 14px; font-weight: 700; z-index: 60; animation: fade .2s ease; max-width: calc(100% - 32px); text-align: center; }
 .linkish { color: var(--accent); font-weight: 700; font-size: 13px; }
+
+/* ---------- audiobook + auto ---------- */
+.sysbox { margin: 0 0 .8em; padding: 10px 12px; border: 1px solid #7fe0ff66; background: var(--system-bg); border-radius: 10px; color: #dff6ff; font-size: 14.5px; line-height: 1.55; max-width: 64ch; }
+.sysbox .sl { display: block; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--system); font-weight: 700; margin-bottom: 3px; }
+.sg { border-radius: 4px; transition: background .2s, box-shadow .2s; }
+.sg.reading { background: #ff7aa82e; box-shadow: 0 0 0 2px #ff7aa82e; }
+.sysbox .sg.reading { background: #7fe0ff33; box-shadow: 0 0 0 2px #7fe0ff33; }
+.replay { margin-left: auto; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; color: var(--muted); }
+.replay:hover, .replay.on { color: var(--accent); background: var(--surface); }
+.pb-right { display: flex; gap: 2px; }
+.iconbtn.on { color: var(--accent); background: #ff7aa81a; }
+.autobar { display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); font-size: 13px; }
+.autobar[hidden] { display: none !important; }
+.autobar .ab-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: blink 1.4s infinite; flex: none; }
+.autobar .ab-text { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; font-variant-numeric: tabular-nums; }
+.autobar .ab-btns { display: flex; gap: 4px; flex: none; }
+.autobar .ab-btns button { height: 30px; padding: 0 11px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--surface-2); }
+.autobar .ab-btns .stopb { color: var(--danger); }
+.quick button.on { color: var(--accent); background: #ff7aa81a; }
+.vrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 10px; padding-block: 12px; border-bottom: 1px solid var(--line); align-items: center; }
+.vrow b { font-size: 15px; display: block; }
+.vrow small { color: var(--muted); display: block; font-size: 12px; }
+.vrow .vsel { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; }
+.vrow select { flex: 1; min-width: 100px; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); font-size: 14px; }
+.sheet h2.st { font-family: var(--display); font-weight: 400; font-size: 22px; margin: 0 0 6px; }
+.sheet p.sp { margin: 0; color: var(--muted); max-width: 52ch; }
 .danger-text { color: var(--danger); }
 </style>
 
@@ -226,11 +252,15 @@ svg { display: block; }
     <div class="playbar pad">
       <button class="iconbtn" id="playBack" aria-label="Back"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
       <div class="t"><small id="playKind">Story</small><b id="playTitle"></b></div>
-      <button class="iconbtn" id="playMenuBtn" aria-label="Story menu"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+      <div class="pb-right">
+        <button class="iconbtn" id="listenBtn" aria-label="Read aloud" aria-pressed="false" title="Read aloud with character voices"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="5" height="7" rx="2"/><rect x="16" y="14" width="5" height="7" rx="2"/></svg></button>
+        <button class="iconbtn" id="playMenuBtn" aria-label="Story menu"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+      </div>
     </div>
     <details class="status" id="statusBox" open hidden><summary><span>Status window</span><span id="statusToggle">▾</span></summary><div class="stats" id="statusStats"></div></details>
     <div class="log pad" id="log" aria-live="polite"></div>
     <div class="composer pad">
+      <div class="autobar" id="autobar" hidden><span class="ab-dot"></span><span class="ab-text" id="abText"></span><span class="ab-btns"><button id="abPause">Pause</button><button id="abSkip">Skip</button><button id="abStop" class="stopb">Stop</button></span></div>
       <div class="choices" id="choices"></div>
       <div class="comp-top">
         <div class="seg" role="group" aria-label="Turn type" id="modeSeg">
@@ -239,6 +269,7 @@ svg { display: block; }
           <button data-mode="direct" aria-pressed="false">Direct</button>
         </div>
         <div class="quick">
+          <button id="btnAuto" title="Let the story play itself" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4z"/></svg>Auto</button>
           <button id="btnContinue" title="Let the scene continue"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l12-7.5z"/></svg>Continue</button>
           <button id="btnRetry" title="Rewrite the last reply"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.4-5.7M20 4v5h-5"/></svg>Retry</button>
         </div>
@@ -256,6 +287,30 @@ svg { display: block; }
    Content: original stories and characters
    ========================================================= */
 const STORIES = [
+{
+  id: "godsystem", title: "Heavenly Dao System: I Am This World's God", kanji: "神", c1: "#0f5132", c2: "#facc15", isNew: true,
+  genres: ["Cultivation", "Fantasy", "Action"],
+  tagline: "The heavens answer to you. They just don't know it yet.",
+  synopsis: "In the Azure Cloud Sect, Bai Lian is the outer disciple everyone laughs at: shattered meridians, zero cultivation, three years stuck at the bottom. On the day he is to be crippled and thrown out, a voice wakes inside his soul. The Heavenly Dao System has found its host. Bai Lian is not a failed cultivator. He is the sealed god of this world, and every prayer, vow and moment of awe aimed at him now feeds his returning divinity.",
+  role: "You are Bai Lian, 17, an outer disciple of the Azure Cloud Sect with shattered meridians. You are secretly the reincarnated, sealed god of this world, and only the System knows.",
+  world: "A classic cultivation world of sects, spirit stones, alchemy, arrogant young masters and heavenly tribulations. Realms: Qi Condensation, Foundation Establishment, Core Formation, Nascent Soul, Soul Transformation, Void Ascension, Immortal. The System turns Faith (awe, gratitude or worship aimed at the player) into Divine Points, spent on Divine Authorities: stopping time briefly, divine sight, granting cultivation to others, rewriting one small law of heaven, smiting. Using divinity too openly draws the Nine Heavenly Courts who sealed the player ten thousand years ago. Tone: satisfying power fantasy with clever reveals, humor from people underestimating the player, and stakes that keep climbing.",
+  cast: [["Lingxi", "The System's spirit: a hand-sized girl in jade robes only you can see. Formal, smug, fiercely loyal."], ["Su Qinghe", "Inner-sect prodigy, the only disciple ever kind to you. She hides a poison eating her meridians."], ["Feng Yao", "Arrogant young master, grandson of the Grand Elder, who has bullied you for three years."], ["Elder Mu", "The gruff outer-sect elder who senses something impossible about you."]],
+  opening: `The stone of the Trial Platform is cold against your cheek. There is blood in your mouth, and laughter all around you.
+
+{Feng Yao}"Three years," Young Master Feng Yao says, pressing his boot into your back. His robes shimmer with Foundation Establishment qi. {Feng Yao}"Three years of eating the sect's rice with meridians like broken reeds. Today the sect takes out its trash." He raises his palm. Qi gathers there, bright and cruel. {Feng Yao}"I'll make it quick. Out of mercy."
+
+At the edge of the crowd, a girl in white inner-sect robes steps forward. {Su Qinghe}"Feng Yao, that's enough!" Su Qinghe. The only person here who ever bothered to learn your name.
+
+Then the world stops.
+
+Falling leaves hang in the air. Feng Yao's palm freezes an inch above your skull. A sound like ten thousand temple bells rings inside your soul.
+
+[SYSTEM] Heavenly Dao System awakened. Host identity confirmed: Primordial God of the Mortal Realm (sealed). Divinity: 0.1%. Faith received: 1 (Su Qinghe, concern). Divine Points: 1.
+
+A tiny girl in jade robes, no taller than your hand, appears on your shoulder and bows so deeply her sleeves brush the stone. {Lingxi}"Forgive my lateness, Your Divinity. Ten thousand years is a long time to sleep." She glances at Feng Yao's frozen palm and sniffs. {Lingxi}"Shall we begin?"`,
+  choices: ["Ask Lingxi what 1 Divine Point can do", "\"Begin.\" Let time resume and face Feng Yao", "Look at Su Qinghe with divine sight"],
+  status: "Realm: Mortal (sealed god) | Divinity: 0.1% | Faith: 1 | Divine Points: 1 | Authority: Time Stop | Exposure: Low"
+},
 {
   id: "archive", title: "Reborn with the Archive Skill", kanji: "転", c1: "#2b4fd8", c2: "#ff9b54",
   genres: ["Isekai", "Fantasy", "Action"],
@@ -517,6 +572,10 @@ Sora says nothing. But the notebook has slipped open, and on the page you can se
 ];
 
 const CHARACTERS = [
+  { id: "c-lingxi", name: "Lingxi", kanji: "仙", c1: "#0f5132", c2: "#facc15", title: "Spirit of your god system",
+    persona: "The spirit of the Heavenly Dao System, bound to her host: a sealed god reborn as a weak sect disciple. A hand-sized girl in jade robes. Formal, ancient, smug, wildly dramatic about 'Your Divinity's glory', secretly worried about her host. Loves explaining cultivation realms, Faith and Divine Points with fake modesty. Calls the user 'Your Divinity'.",
+    setting: "Your shabby outer-disciple hut in the Azure Cloud Sect, late at night, a candle burning low.",
+    greeting: `*A tiny jade-robed figure pops into existence on the rim of your teacup and bows so deeply she nearly falls in.* "Your Divinity! Today three outer disciples cursed your name and one stray cat looked at you with respect. That is one Faith. A humble start for the god of all creation." *She straightens, beaming.* "What shall we conquer tomorrow?"` },
   { id: "c-hinata", name: "Hinata Sakuraba", kanji: "絵", c1: "#d94a7b", c2: "#ffd36e", title: "Your secretly-a-mangaka roommate",
     persona: "A calm, polite, popular university student who is secretly an exhausted manga artist under the pen name 'Kumo'. Dry humor once she warms up. Embarrassed easily, loves strong black coffee, bakery bread and shonen fight scenes. Speaks softly and precisely.",
     setting: "The small apartment you share above a bakery in a Tokyo suburb, late evening.",
@@ -543,10 +602,10 @@ const CHARACTERS = [
     greeting: `*Ember stretches her wings with a lazy crack and peers down at you with one gold eye.* "Rider. You smell like jerky. I'm not saying I want some. I'm saying you should know that I know."` }
 ];
 
-const GENRE_KANJI = { Fantasy: "魔", Romance: "恋", Action: "拳", Isekai: "転", Comedy: "笑", Mystery: "謎", "Sci-Fi": "鋼", Horror: "夜", "Slice of Life": "日", Sports: "剣", School: "学", Adventure: "旅", Supernatural: "霊", Music: "歌", Drama: "涙" };
-const GENRE_COLORS = { Fantasy: ["#5b2bb5", "#59d6ff"], Romance: ["#d94a7b", "#ffd36e"], Action: ["#991b1b", "#fb923c"], Isekai: ["#2b4fd8", "#ff9b54"], Comedy: ["#a16207", "#fde047"], Mystery: ["#0f2a2e", "#4ade80"], "Sci-Fi": ["#334155", "#38bdf8"], Horror: ["#1c1917", "#ef4444"], "Slice of Life": ["#0e7490", "#fbcfe8"], Sports: ["#9f1239", "#fda4af"], School: ["#1d4ed8", "#a5f3fc"], Adventure: ["#c2410c", "#ffd166"], Supernatural: ["#b45309", "#fde68a"], Music: ["#7c3aed", "#fbbf24"], Drama: ["#3730a3", "#c4b5fd"] };
+const GENRE_KANJI = { Cultivation: "仙", Fantasy: "魔", Romance: "恋", Action: "拳", Isekai: "転", Comedy: "笑", Mystery: "謎", "Sci-Fi": "鋼", Horror: "夜", "Slice of Life": "日", Sports: "剣", School: "学", Adventure: "旅", Supernatural: "霊", Music: "歌", Drama: "涙" };
+const GENRE_COLORS = { Cultivation: ["#0f5132", "#facc15"], Fantasy: ["#5b2bb5", "#59d6ff"], Romance: ["#d94a7b", "#ffd36e"], Action: ["#991b1b", "#fb923c"], Isekai: ["#2b4fd8", "#ff9b54"], Comedy: ["#a16207", "#fde047"], Mystery: ["#0f2a2e", "#4ade80"], "Sci-Fi": ["#334155", "#38bdf8"], Horror: ["#1c1917", "#ef4444"], "Slice of Life": ["#0e7490", "#fbcfe8"], Sports: ["#9f1239", "#fda4af"], School: ["#1d4ed8", "#a5f3fc"], Adventure: ["#c2410c", "#ffd166"], Supernatural: ["#b45309", "#fde68a"], Music: ["#7c3aed", "#fbbf24"], Drama: ["#3730a3", "#c4b5fd"] };
 const GENRES = Object.keys(GENRE_KANJI);
-const FILTERS = ["All", "Isekai", "Fantasy", "Romance", "Action", "Comedy", "Mystery", "Sci-Fi", "Slice of Life", "School"];
+const FILTERS = ["All", "Cultivation", "Isekai", "Fantasy", "Romance", "Action", "Comedy", "Mystery", "Sci-Fi", "Slice of Life", "School"];
 
 /* =========================================================
    Storage (per-device)
@@ -555,7 +614,7 @@ const store = {
   get(k, d) { try { const v = localStorage.getItem("yume." + k); return v ? JSON.parse(v) : d; } catch { return d; } },
   set(k, v) { try { localStorage.setItem("yume." + k, JSON.stringify(v)); } catch {} }
 };
-let profile = Object.assign({ name: "Yuki", about: "", length: "medium", tier: "quick" }, store.get("profile", {}));
+let profile = Object.assign({ name: "Yuki", about: "", length: "medium", tier: "quick", engine: "auto", speed: 1, listen: false }, store.get("profile", {}));
 let runs = store.get("runs", {});
 let customs = store.get("customs", []);
 const saveRuns = () => store.set("runs", runs);
@@ -584,6 +643,202 @@ function errCopy(code) {
     default: return "The connection dropped. Tap Retry to try again.";
   }
 }
+
+/* =========================================================
+   Voices (audiobook): Claude voices when offered, device voices otherwise
+   ========================================================= */
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const hasDevice = typeof window.speechSynthesis !== "undefined" && typeof window.SpeechSynthesisUtterance !== "undefined";
+let dvCache = [];
+function deviceVoices() {
+  if (!hasDevice) return [];
+  try { const all = speechSynthesis.getVoices() || []; const en = all.filter(v => /^en/i.test(v.lang)); if (all.length) dvCache = (en.length ? en : all).slice(0, 40); } catch {}
+  return dvCache;
+}
+if (hasDevice) { try { speechSynthesis.onvoiceschanged = () => deviceVoices(); deviceVoices(); } catch {} }
+const FEMALE_V = /samantha|karen|moira|tessa|victoria|fiona|serena|kate|susan|zira|female|allison|ava|nicky|martha|catherine|aria|jenny|sonia|libby|emma|olivia|zoe|siri.*(female|voice 2)/i;
+const MALE_V = /daniel|alex\b|fred|rishi|arthur|oliver|tom\b|aaron|gordon|david|mark|male|guy|ryan|thomas|lee\b|reed|eddy|ralph|james|evan|nathan/i;
+
+const Voice = {
+  claude: null, claudeDenied: false, token: 0, state: "idle", onLine: null, unlocked: false, eng: null,
+  engine() {
+    const c = !!this.claude && !this.claudeDenied, d = hasDevice;
+    if (profile.engine === "claude") return c ? "claude" : (d ? "device" : null);
+    if (profile.engine === "device") return d ? "device" : (c ? "claude" : null);
+    return c ? "claude" : (d ? "device" : null);
+  },
+  unlock() {
+    if (this.engine() !== "device" || this.unlocked) return;
+    try { const u = new SpeechSynthesisUtterance(" "); u.volume = 0; speechSynthesis.speak(u); this.unlocked = true; } catch {}
+  },
+  stop() {
+    this.token++; const was = this.state; this.state = "idle"; this.onLine = null;
+    if (was !== "idle") { try { this.claude && this.eng === "claude" && this.claude.stop(); } catch {} try { hasDevice && speechSynthesis.cancel(); } catch {} }
+  },
+  pause() { if (this.state !== "playing") return; this.state = "paused"; try { this.eng === "claude" ? this.claude.pause() : speechSynthesis.pause(); } catch {} },
+  resume() { if (this.state !== "paused") return; this.state = "playing"; try { this.eng === "claude" ? this.claude.resume() : speechSynthesis.resume(); } catch {} },
+  async play(lines, cfgFor, onLine) {
+    this.stop();
+    const token = ++this.token; const eng = this.engine();
+    if (!eng || !lines.length) return eng ? "done" : "error";
+    this.eng = eng; this.state = "playing"; this.onLine = onLine;
+    try {
+      if (eng === "claude") await this._claude(lines, cfgFor); else await this._device(lines, cfgFor, token);
+      return token === this.token ? "done" : "stopped";
+    } catch (e) {
+      if (token !== this.token || (e && e.code === "stopped")) return "stopped";
+      voiceError(e); return "error";
+    } finally { if (token === this.token) { this.state = "idle"; this.onLine = null; } }
+  },
+  _claude(lines, cfgFor) {
+    const t = this.claude;
+    const L = lines.map((l, i) => { const c = cfgFor(l.speaker); return { text: l.text, voice: c.cv, rate: clamp(c.rate * profile.speed, 0.7, 1.5), id: String(i) }; });
+    const ps = [];
+    for (let i = 0; i < L.length; i += 20) ps.push(i === 0 ? t.speak(L.slice(i, i + 20)) : t.add(L.slice(i, i + 20)));
+    ps.forEach(p => p.catch(() => {}));
+    return Promise.all(ps);
+  },
+  async _device(lines, cfgFor, token) {
+    const voices = deviceVoices();
+    for (let i = 0; i < lines.length; i++) {
+      if (token !== this.token) throw { code: "stopped" };
+      this.onLine && this.onLine(i);
+      const l = lines[i], c = cfgFor(l.speaker);
+      await new Promise(res => {
+        const u = new SpeechSynthesisUtterance(l.text);
+        const v = voices.find(x => x.voiceURI === c.dv); if (v) { u.voice = v; u.lang = v.lang; }
+        u.rate = clamp(c.rate * profile.speed, 0.5, 2); u.pitch = clamp(c.pitch, 0, 2);
+        let done = false, budget = Math.max(6000, l.text.length * 110 + 3000) / u.rate;
+        const fin = () => { if (!done) { done = true; clearInterval(wd); res(); } };
+        const wd = setInterval(() => { if (token !== this.token) return fin(); if (this.state === "paused") return; budget -= 500; if (budget <= 0) fin(); }, 500);
+        u.onend = fin; u.onerror = fin;
+        speechSynthesis.speak(u);
+      });
+    }
+  }
+};
+function voiceError(e) {
+  const code = e && e.code;
+  if (code === "not_granted") { Voice.claudeDenied = true; toast(hasDevice ? "Claude voices are off for this page. Using your device's voices instead." : "Voices are turned off for this page."); }
+  else if (code === "rate_limited") toast("Voice limit reached for now. The story keeps going as text.");
+  else if (code === "busy") toast("Voice is busy. Stop dictation, then try again.");
+  else toast("Couldn't play the voice. Tap the speaker on a message to try again.");
+}
+if (window.claude && typeof window.claude.use === "function") {
+  window.claude.use("tts").then(t => {
+    if (!t) return;
+    Voice.claude = t;
+    try { t.onLine(({ id }) => { if (Voice.onLine && id != null) Voice.onLine(+id); }); } catch {}
+    if (cur) { drawLog(); updateComposer(); }
+  }).catch(() => {});
+}
+
+/* ---------- speakers ---------- */
+const TITLES = new Set("young master captain professor lady lord prince princess lt. lt dr. dr mr. mr mrs. mrs ms sir elder grandmaster postmistress president the of and".split(" "));
+const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const hashStr = s => { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
+function castNames(run) { const s = findSource(run.kind, run.ref); if (!s) return []; return run.kind === "char" ? [s.name] : (s.cast || []).map(c => c[0]); }
+function nameWords(n) { return n.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, "").split(/\s+/).filter(w => w.length > 1 && !TITLES.has(w)); }
+function addExtra(run, n) { run.extra = run.extra || []; if (!run.extra.includes(n) && !castNames(run).includes(n) && run.extra.length < 16) run.extra.push(n); return n; }
+function resolveSpeaker(tag, run) {
+  const t = tag.trim();
+  if (/^(you|player|me)$/i.test(t)) return addExtra(run, "You");
+  if (/^system$/i.test(t)) return "System";
+  if (/^narrator$/i.test(t)) return "Narrator";
+  const tw = nameWords(t);
+  for (const n of castNames(run)) { const nw = nameWords(n); if (n.toLowerCase() === t.toLowerCase() || (tw.length && tw.every(w => nw.includes(w))) || (nw.length && nw.every(w => tw.includes(w)))) return n; }
+  return addExtra(run, t.slice(0, 30));
+}
+function guessSpeaker(p, idx, run) {
+  if (run.kind === "char") return castNames(run)[0];
+  let best = null, bestD = 1e9;
+  for (const n of castNames(run)) {
+    const aliases = [n, ...nameWords(n).filter(w => w.length > 2)];
+    for (const a of aliases) {
+      const re = new RegExp("(^|[^\\p{L}])" + escRe(a) + "(?![\\p{L}])", "giu"); let m;
+      while ((m = re.exec(p))) { const d = Math.abs(m.index - idx) + (m.index > idx ? 40 : 0); if (d < bestD) { bestD = d; best = n; } }
+    }
+  }
+  return best || addExtra(run, "Voice");
+}
+const stripTags = s => String(s || "").replace(/\{[^}\n]{0,40}\}\s*/g, "").replace(/\{[^}\n]*$/, "");
+function segmentize(text, run) {
+  const out = [];
+  for (let p of String(text || "").trim().split(/\n{2,}/)) {
+    p = p.trim(); if (!p) continue;
+    const sm = p.match(/^\[([A-Z][A-Za-z ]{1,24})\]\s*/) || p.match(/^<([A-Z][A-Z0-9 ]{0,15})>\s*/);
+    if (sm) {
+      const cn = castNames(run).find(n => n.toLowerCase() === sm[1].toLowerCase());
+      out.push({ sys: true, label: sm[1], segs: [{ kind: "narr", text: stripTags(p.slice(sm[0].length)), speaker: cn || "System" }] });
+      continue;
+    }
+    const segs = []; const re = /(\{([^}\n]{1,40})\}\s*)?(["“])([^"”]*?)(["”])/g; let last = 0, m;
+    while ((m = re.exec(p))) {
+      const before = stripTags(p.slice(last, m.index));
+      if (before.trim()) segs.push({ kind: "narr", text: before, speaker: "Narrator" });
+      segs.push({ kind: "quote", text: stripTags(m[4]), speaker: m[2] ? resolveSpeaker(m[2], run) : guessSpeaker(p, m.index, run) });
+      last = re.lastIndex;
+    }
+    const rest = stripTags(p.slice(last));
+    if (rest.trim()) segs.push({ kind: "narr", text: rest, speaker: "Narrator" });
+    out.push({ sys: false, segs });
+  }
+  return out;
+}
+function inl(t) { return esc(t).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/\*(.+?)\*/g, "<em>$1</em>").replace(/\n/g, "<br>"); }
+function narrHTML(text, run) {
+  let k = 0;
+  return segmentize(text, run).map(pa => {
+    const inner = pa.segs.map(s => { const i = k++; return `<span class="sg" data-k="${i}">${s.kind === "quote" ? `<span class="q">“${inl(s.text)}”</span>` : inl(s.text)}</span>`; }).join("");
+    return pa.sys ? `<div class="sysbox"><span class="sl">${esc(pa.label)}</span>${inner}</div>` : `<p>${inner}</p>`;
+  }).join("");
+}
+function linesFor(text, run) {
+  const out = []; let k = 0;
+  for (const pa of segmentize(text, run)) for (const s of pa.segs) {
+    const i = k++;
+    const clean = s.text.replace(/\*+/g, "").replace(/\s+/g, " ").trim();
+    if (!/[\p{L}\p{N}]/u.test(clean)) continue;
+    const parts = clean.match(/[^.!?…]+[.!?…]+["”')\]]*\s*|[^.!?…]+$/g) || [clean];
+    for (const part of parts) { const t = part.trim(); if (t && /[\p{L}\p{N}]/u.test(t)) out.push({ k: i, text: t.slice(0, 1900), speaker: s.speaker }); }
+  }
+  return out;
+}
+function speakersFor(run) {
+  const s = findSource(run.kind, run.ref); const list = ["Narrator"];
+  if (run.kind === "char") list.push(s.name);
+  else { if (run.status || /\[SYSTEM\]/.test(s.opening || "")) list.push("System"); (s.cast || []).forEach(([n]) => list.push(n)); }
+  (run.extra || []).forEach(n => { if (!list.includes(n)) list.push(n); });
+  return list;
+}
+function descFor(run, sp) {
+  const s = findSource(run.kind, run.ref);
+  if (run.kind === "char") return sp === s.name ? s.persona : "";
+  return ((s.cast || []).find(c => c[0] === sp) || [])[1] || "";
+}
+function guessGender(d) {
+  const f = (d.match(/\b(she|her|hers|girl|woman|sister|lady|princess|queen|daughter|mother|grandma|heroine|postmistress|idol)\b/gi) || []).length;
+  const m = (d.match(/\b(he|his|him|boy|man|brother|lord|prince|king|son|father|grandson|master|sir|salaryman)\b/gi) || []).length;
+  return f > m ? "f" : m > f ? "m" : "";
+}
+function defaultVoice(run, sp) {
+  const list = speakersFor(run);
+  let j = list.indexOf(sp); if (j < 0) j = 4 + (hashStr(sp) % 7);
+  const dv = deviceVoices(); const uri = v => (v && v.voiceURI) || "";
+  if (sp === "Narrator") return { cv: "buttery", dv: uri(dv[0]), rate: 1, pitch: 1 };
+  if (sp === "System") return { cv: "glassy", dv: uri(dv[2] || dv[1] || dv[0]), rate: 0.95, pitch: 0.75 };
+  const k = Math.max(0, j - 1), g = guessGender(descFor(run, sp));
+  let pool = g === "f" ? dv.filter(v => FEMALE_V.test(v.name)) : g === "m" ? dv.filter(v => MALE_V.test(v.name)) : [];
+  if (pool.length > 1) pool = pool.filter(v => v !== dv[0]); // keep the narrator's voice for the narrator
+  const others = dv.length > 1 ? dv.slice(1) : dv;
+  const pick = pool.length ? pool[k % pool.length] : others[k % Math.max(1, others.length)];
+  return {
+    cv: ["airy", "rounded", "glassy"][k % 3], dv: uri(pick),
+    rate: [1, 0.93, 1.08][Math.floor(k / 3) % 3],
+    pitch: g === "f" ? 1.2 + (k % 2) * 0.12 : g === "m" ? 0.82 - (k % 2) * 0.08 : 1.05 + (k % 3) * 0.08
+  };
+}
+function voiceCfg(run, sp) { return Object.assign({}, defaultVoice(run, sp), (run.voices || {})[sp] || {}); }
 
 /* =========================================================
    Helpers
@@ -675,7 +930,7 @@ function renderHome() {
       <div class="hero">
         <div class="big" aria-hidden="true">夢</div>
         <h2>${isStory ? "Step inside your own anime" : "Talk with characters who remember you"}</h2>
-        <p>${isStory ? "You play the lead. Act, speak, or direct the narrator, and the story bends around your choices." : "One-on-one roleplay with a cast of original characters. Every chat is saved where you left it."}</p>
+        <p>${isStory ? "You play the lead. Act, speak, or direct the narrator. Or press Auto and listen to it play out like an audiobook, with a voice for every character." : "One-on-one roleplay with a cast of original characters. Every chat is saved where you left it."}</p>
         <button class="btn small" id="heroCta">${isStory ? "Create your own story" : "Browse characters"}</button>
       </div>
       <div id="aiNotice">${aiNoticeHTML()}</div>
@@ -692,7 +947,7 @@ function renderHome() {
     ${ui.filter === "All" ? `
     <div class="section">
       <div class="sechead pad"><h3>Top ranked</h3><span class="sub">Editor's picks</span></div>
-      <div class="rail">${STORIES.slice(0, 6).map((s, i) => `<button class="card lg" data-open="story:${s.id}">${coverHTML(s, { rank: i + 1 })}</button>`).join("")}</div>
+      <div class="rail">${STORIES.slice(0, 6).map((s, i) => `<button class="card lg" data-open="story:${s.id}">${coverHTML(s, { rank: i + 1, tag: s.isNew ? "NEW" : "" })}</button>`).join("")}</div>
     </div>
     <div class="section">
       <div class="sechead pad"><h3>New this week</h3></div>
@@ -756,10 +1011,13 @@ function openDetail(kind, id) {
       ${cast.length ? `<div class="label">Cast</div><div class="cast">${cast.map(([n, d]) => `<div><span class="av">${esc(n[0])}</span><div><b>${esc(n)}</b><span>${esc(d)}</span></div></div>`).join("")}</div>` : ""}
       <div class="actions">
         ${existing ? `<button class="btn" id="dContinue">Continue</button><button class="btn ghost" id="dRestart">Start over</button>` : `<button class="btn" id="dStart">${isChar ? "Start chat" : "Start story"}</button>`}
+        <button class="btn ghost" id="dAudio"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="5" height="7" rx="2"/><rect x="16" y="14" width="5" height="7" rx="2"/></svg>${existing ? "Continue as audiobook" : "Play as audiobook"}</button>
       </div>
+      <p style="font-size:12px;color:var(--muted);margin-top:10px">Audiobook mode reads the story aloud with a voice for each character and picks the best move for you, 10 turns at a time.</p>
     </div>`, sc => {
     sc.querySelector("#dStart")?.addEventListener("click", () => { closeSheet(); startRun(kind, id, true); });
     sc.querySelector("#dContinue")?.addEventListener("click", () => { closeSheet(); startRun(kind, id, false); });
+    sc.querySelector("#dAudio").addEventListener("click", () => { closeSheet(); startRun(kind, id, !existing, { audiobook: true }); });
     const rb = sc.querySelector("#dRestart");
     if (rb) rb.addEventListener("click", () => {
       if (rb.dataset.armed) { closeSheet(); startRun(kind, id, true); }
@@ -801,7 +1059,7 @@ function renderHistory() {
         const last = [...r.msgs].reverse().find(m => m.who === "narr" && m.text);
         const turns = r.msgs.filter(m => m.who === "player" && !m.hidden).length;
         return `<div class="row" style="cursor:default">
-          <button data-resume="${esc(r.key)}" style="display:contents">${coverHTML(s, { noTitle: true })}<span style="min-width:0;text-align:left"><b>${esc(s.title || s.name)}</b><small>${esc((last?.text || "").replace(/\s+/g, " ").slice(0, 90))}</small></span></button>
+          <button data-resume="${esc(r.key)}" style="display:contents">${coverHTML(s, { noTitle: true })}<span style="min-width:0;text-align:left"><b>${esc(s.title || s.name)}</b><small>${esc(stripTags(last?.text || "").replace(/\s+/g, " ").slice(0, 90))}</small></span></button>
           <span class="meta" style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">${ago(r.updated)} · ${turns} ${turns === 1 ? "turn" : "turns"}<button class="linkish" data-del="${esc(r.key)}">Delete</button></span>
         </div>`;
       }).join("")}</div>` : `<div class="empty"><b>No stories yet</b>Pick a title on Home and your progress will show up here.</div>`}
@@ -895,6 +1153,11 @@ function renderCreate() {
 }
 
 /* ---------- MY ---------- */
+function voiceAvailText() {
+  const c = Voice.claude && !Voice.claudeDenied;
+  const n = deviceVoices().length;
+  return `Claude voices: ${c ? "available" : "not offered here (they don't run in Safari or the Claude mobile apps)"}. Device voices: ${hasDevice ? (n ? n + " found" : "available") : "not available"}. Now using: ${({ claude: "Claude voices", device: "device voices" })[Voice.engine()] || "none"}.`;
+}
 function renderMe() {
   const all = Object.values(runs);
   const turns = all.reduce((n, r) => n + r.msgs.filter(m => m.who === "player" && !m.hidden).length, 0);
@@ -907,6 +1170,8 @@ function renderMe() {
         <div class="field"><label for="p-about">About you</label><textarea id="p-about" placeholder="Optional: how characters should see and address you (appearance, pronouns, personality).">${esc(profile.about)}</textarea></div>
         <div class="field"><span class="lbl">Reply length</span><div class="seg" role="group" aria-label="Reply length" id="p-len">${[["short", "Short"], ["medium", "Medium"], ["long", "Long"]].map(([v, l]) => `<button type="button" data-v="${v}" aria-pressed="${profile.length === v}">${l}</button>`).join("")}</div></div>
         <div class="field"><span class="lbl">Narrator mode</span><div class="seg" role="group" aria-label="Narrator mode" id="p-tier">${[["quick", "Fast"], ["default", "Deep"]].map(([v, l]) => `<button type="button" data-v="${v}" aria-pressed="${profile.tier === v}">${l}</button>`).join("")}</div><span class="hint">Fast replies start almost instantly. Deep thinks first, takes longer, and writes richer scenes.</span></div>
+        <div class="field"><span class="lbl">Voices</span><div class="seg" role="group" aria-label="Voice engine" id="p-eng">${[["auto", "Auto"], ["claude", "Claude voices"], ["device", "Device voices"]].map(([v, l]) => `<button type="button" data-v="${v}" aria-pressed="${profile.engine === v}">${l}</button>`).join("")}</div><span class="hint">${esc(voiceAvailText())}</span></div>
+        <div class="field"><span class="lbl">Reading speed</span><div class="seg" role="group" aria-label="Reading speed" id="p-speed">${[[0.9, "0.9×"], [1, "1×"], [1.15, "1.15×"], [1.3, "1.3×"]].map(([v, l]) => `<button type="button" data-v="${v}" aria-pressed="${profile.speed === v}">${l}</button>`).join("")}</div></div>
       </div>
       <div class="notice"><span class="dot"></span><div><strong>Where your stories live.</strong> Progress is saved in this browser on this device. The narrator uses your own Claude account, so turns count toward your Claude usage.</div></div>
       <div><button class="btn ghost" id="resetAll">Erase all progress and titles</button></div>
@@ -915,6 +1180,8 @@ function renderMe() {
   $("#p-about").onchange = e => { profile.about = e.target.value.trim(); saveProfile(); toast("Saved"); };
   view.querySelectorAll("#p-len button").forEach(b => b.onclick = () => { profile.length = b.dataset.v; saveProfile(); renderMe(); });
   view.querySelectorAll("#p-tier button").forEach(b => b.onclick = () => { profile.tier = b.dataset.v; saveProfile(); renderMe(); });
+  view.querySelectorAll("#p-eng button").forEach(b => b.onclick = () => { profile.engine = b.dataset.v; saveProfile(); renderMe(); });
+  view.querySelectorAll("#p-speed button").forEach(b => b.onclick = () => { profile.speed = Number(b.dataset.v); saveProfile(); renderMe(); });
   const rb = $("#resetAll");
   rb.onclick = () => {
     if (rb.dataset.armed) { runs = {}; customs = []; saveRuns(); saveCustoms(); renderMe(); toast("Everything erased"); }
@@ -930,8 +1197,9 @@ let busy = false;
 let ctl = null;
 let mode = "act";
 
-function startRun(kind, id, fresh) {
+function startRun(kind, id, fresh, opts = {}) {
   const s = findSource(kind, id); if (!s) return;
+  haltAll(true);
   const key = runKey(kind, id);
   if (fresh || !runs[key]) {
     const opening = kind === "char" ? s.greeting : s.opening;
@@ -949,11 +1217,23 @@ function startRun(kind, id, fresh) {
   $("#playKind").textContent = kind === "char" ? "Chat" : kind === "custom" ? "Your title" : "Story";
   $("#input").placeholder = kind === "char" ? "Say something…" : "What do you do?";
   setMode(kind === "char" ? "say" : "act");
-  drawLog(); drawStatus(); drawChoices(); updateComposer();
+  if (opts.audiobook) {
+    if (Voice.engine()) { setListen(true); Voice.unlock(); }
+    else toast("Voices aren't available in this browser. Auto-play will run as text.");
+    if (aiState === "ready") { auto.on = true; auto.left = auto.total = 10; }
+    else toast("Open this page in the Claude app so the narrator can keep writing.");
+  }
+  drawLog(); drawStatus(); drawChoices(); updateComposer(); drawAutobar();
   if (!cur.msgs.length) { cur.msgs.push({ who: "player", mode: "begin", hidden: true, text: "Write the opening scene." }); generate(); }
+  else if (opts.audiobook) {
+    const last = cur.msgs[cur.msgs.length - 1];
+    if (last.who === "narr") afterNarration(cur, cur.msgs.length - 1);
+    else if (auto.on) generate();
+  }
 }
 
 function leavePlay() {
+  haltAll(true);
   if (busy && ctl) ctl.abort();
   closeMenu();
   $("#play").hidden = true; cur = null;
@@ -978,12 +1258,22 @@ function speakerFor() {
 function msgHTML(m, idx) {
   if (m.hidden) return "";
   if (m.who === "player") {
-    return `<div class="msg player ${m.mode === "direct" ? "direct" : ""}"><span class="m">${playerLabel(m.mode)}</span>${esc(m.text)}</div>`;
+    return `<div class="msg player ${m.mode === "direct" ? "direct" : ""}"><span class="m">${m.auto ? "Auto · " : ""}${playerLabel(m.mode)}</span>${esc(m.text)}</div>`;
   }
   const sp = speakerFor();
-  const body = m.pending && !m.text ? `<div class="thinking" aria-label="Writing"><span></span><span></span><span></span></div>` : fmt(m.text);
-  return `<div class="msg narr" data-i="${idx}"><div class="speaker"><i>${esc(sp.i)}</i>${esc(sp.n)}</div><div class="body">${body}</div>${m.error ? `<div class="err" style="margin-top:10px">${esc(m.error)}</div>` : ""}</div>`;
+  const body = m.pending && !m.text ? `<div class="thinking" aria-label="Writing"><span></span><span></span><span></span></div>` : narrHTML(m.text, cur);
+  const canPlay = !m.pending && m.text && Voice.engine();
+  const on = reading && reading.run === cur && reading.mi === idx;
+  return `<div class="msg narr" data-i="${idx}"><div class="speaker"><i>${esc(sp.i)}</i>${esc(sp.n)}${canPlay ? `<button class="replay ${on ? "on" : ""}" data-play="${idx}" aria-label="${on ? "Stop reading" : "Read aloud"}"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 4V5L8 9zM16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M4 9v6h4l5 4V5L8 9z"/></svg></button>` : ""}</div><div class="body">${body}</div>${m.error ? `<div class="err" style="margin-top:10px">${esc(m.error)}</div>` : ""}</div>`;
 }
+$("#log").addEventListener("click", e => {
+  const b = e.target.closest("[data-play]"); if (!b || !cur) return;
+  const mi = Number(b.dataset.play);
+  if (reading && reading.run === cur && reading.mi === mi) { haltVoice(); return; }
+  if (auto.timer) { clearInterval(auto.timer); auto.timer = null; }
+  Voice.unlock();
+  narrate(cur, mi);
+});
 function drawLog() {
   const log = $("#log");
   log.innerHTML = cur.msgs.map(msgHTML).join("") + (cur.lastError ? `<div class="err">${esc(cur.lastError)}</div>` : "") +
@@ -1004,9 +1294,9 @@ function drawChoices() {
   el.innerHTML = list.map(c => `<button>${esc(c)}</button>`).join("");
   el.hidden = !list.length;
   el.querySelectorAll("button").forEach((b, i) => b.onclick = () => {
-    const c = list[i];
-    const isSpeech = /^["“]/.test(c.trim());
-    submit(isSpeech ? c.trim().replace(/^["“]|["”]$/g, "") : c, isSpeech ? "say" : (cur.kind === "char" ? "say" : "act"));
+    haltAll();
+    const turn = choiceToTurn(list[i], cur.kind);
+    submit(turn.text, turn.mode);
   });
 }
 function updateComposer() {
@@ -1020,6 +1310,10 @@ function updateComposer() {
   const last = cur.msgs[cur.msgs.length - 1];
   $("#btnContinue").disabled = busy || !canAI;
   $("#btnRetry").disabled = busy || !canAI || !last || (last.who === "narr" && last.opening);
+  const ab = $("#btnAuto");
+  ab.classList.toggle("on", auto.on); ab.setAttribute("aria-pressed", auto.on);
+  ab.disabled = !auto.on && !canAI;
+  $("#listenBtn").classList.toggle("on", listenOn); $("#listenBtn").setAttribute("aria-pressed", listenOn);
 }
 
 /* ---------- prompt building ---------- */
@@ -1040,13 +1334,14 @@ ${tags}
 
 STYLE: Stay fully in character. Mix short actions in *asterisks* with spoken dialogue in double quotes. Remember what has happened earlier in the chat and refer back to it. Have your own moods and opinions, ask questions, react to the player. Never write the player's words, thoughts or actions for them. About ${n} words. Keep it PG-13: no explicit sexual content, no graphic gore.
 
-FORMAT: Write your in-character reply first. Then on a new line write @@CHOICES followed by exactly three short things ${name} could say or do next (under 10 words each), one per line, each starting with "- ". Put spoken suggestions in double quotes. Write nothing after the choices.
+FORMAT: Write your in-character reply first. Then on a new line write @@CHOICES followed by exactly three short things ${name} could say or do next (under 10 words each), one per line, each starting with "- ". Put spoken suggestions in double quotes. Then on a new line write @@BEST followed by only the number (1, 2 or 3) of the option that would make the most interesting conversation. Write nothing after that.
 
 OPENING LINE ALREADY SHOWN TO THE PLAYER:
 ${s.greeting}`;
   }
   const n = WORDS.story[profile.length] || 160;
   const cast = (s.cast || []).map(([cn, cd]) => `- ${cn}${cd ? ": " + cd : ""}`).join("\n") || "- Invent characters as needed.";
+  const exName = ((s.cast || [])[0] || ["Aiko"])[0];
   const statusRule = run.status ? `\nThen on a new line write @@STATUS followed by ONE line of the player's updated stats in the exact form "Key: value | Key: value". Keep the same keys in the same order unless the story clearly adds one. Change values only when the story justifies it. Current stats: ${run.status}` : "";
   const opening = s.opening ? `\n\nOPENING SCENE ALREADY SHOWN TO THE PLAYER:\n${s.opening}` : "";
   return `You are the narrator and game master of an interactive anime story. The player controls the main character; you control the world and everyone else in it.
@@ -1062,7 +1357,9 @@ ${tags}
 
 STYLE: Second person ("you"), present tense, like a light novel or anime episode. Vivid, specific, quick to read on a phone; short paragraphs. Side characters have distinct voices and their own goals, and they act on their own. Show real consequences of the player's choices and keep track of what happened before. Escalate gradually and plant hooks. Never decide the player's words, feelings or major actions for them. End each reply on a moment that invites the player's next move. About ${n} words. Keep it PG-13: no explicit sexual content, no graphic gore.
 
-FORMAT: Write only the story text first. Then on a new line write @@CHOICES followed by exactly three short, different next moves for the player (under 10 words each), one per line, each starting with "- ". Put spoken suggestions in double quotes.${statusRule}
+VOICES: The story is also read aloud with a different voice per character. Tag every line of spoken dialogue with the speaker's name in curly braces directly before the opening quote, for example {${exName}}"We have to go." Use names exactly as in the cast list (give new characters a short name and keep it), and tag the player's own spoken lines as {You}. The tags are hidden from the reader. If the story has a system, status screen or magical interface, its messages go in their own paragraph starting with [SYSTEM].
+
+FORMAT: Write only the story text first. Then on a new line write @@CHOICES followed by exactly three short, different next moves for the player (under 10 words each), one per line, each starting with "- ". Put spoken suggestions in double quotes. Then on a new line write @@BEST followed by only the number (1, 2 or 3) of the move that would lead to the most exciting, in-character next scene.${statusRule}
 Write nothing else after that.${opening}`;
 }
 function buildTurns(run) {
@@ -1088,7 +1385,16 @@ function parseReply(t) {
   if (cm) choices = cm[1].split("\n").map(l => l.trim()).filter(l => /^[-*•\d]/.test(l)).map(l => l.replace(/^([-*•]|\d+[.)])\s*/, "").trim()).filter(Boolean).slice(0, 3);
   const sm = t.match(/@@STATUS\s*([^\n]+)/);
   if (sm) status = sm[1].trim();
-  return { story, choices, status };
+  const bm = t.match(/@@BEST\s*(\d)/);
+  const best = bm ? clamp(Number(bm[1]), 1, 3) : 1;
+  return { story, choices, status, best };
+}
+// A suggested move becomes a turn: a quoted line is speech, anything else is an action.
+function choiceToTurn(c, kind) {
+  const t = String(c || "").trim();
+  const q = t.match(/^["“]([^"”]+)["”]/);
+  if (q) return { mode: "say", text: q[1].replace(/[,.]$/, "").trim() + (/[!?]$/.test(q[1]) ? "" : ".") };
+  return { mode: kind === "char" ? "say" : "act", text: t };
 }
 
 /* ---------- turn flow ---------- */
@@ -1104,10 +1410,12 @@ async function generate() {
   if (!cur) return;
   if (aiState !== "ready" || !sample) { drawLog(); updateComposer(); return; }
   const run = cur;
+  haltVoice();
   busy = true; run.choices = [];
+  let ok = false;
   const msg = { who: "narr", text: "", pending: true };
   run.msgs.push(msg);
-  drawLog(); drawChoices(); updateComposer();
+  drawLog(); drawChoices(); updateComposer(); drawAutobar();
   const bodyEl = () => document.querySelector(`#log .msg.narr[data-i="${run.msgs.indexOf(msg)}"] .body`);
   ctl = new AbortController();
   const log = $("#log");
@@ -1119,16 +1427,17 @@ async function generate() {
         if (cur !== run) return;
         const p = parseReply(text);
         msg.text = p.story;
-        const el = bodyEl(); if (el && p.story) el.innerHTML = fmt(p.story);
+        const el = bodyEl(); if (el && p.story) el.innerHTML = narrHTML(p.story, run);
         const nearBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 140;
         if (nearBottom) log.scrollTop = log.scrollHeight;
       }
     });
     const p = parseReply(res.text);
     msg.text = p.story || res.text.trim();
-    run.choices = p.choices;
+    run.choices = p.choices; run.best = p.best;
     if (p.status && run.status) run.status = p.status;
     if (res.truncated) msg.error = "This reply was cut short. Tap Continue to pick it up.";
+    ok = true;
   } catch (e) {
     const code = e && e.code;
     if (code === "cancelled") {
@@ -1147,15 +1456,20 @@ async function generate() {
     busy = false; ctl = null;
     run.updated = Date.now();
     saveRuns();
-    if (cur === run) { drawLog(); drawStatus(); drawChoices(); updateComposer(); }
+    if (cur === run) {
+      drawLog(); drawStatus(); drawChoices(); updateComposer(); drawAutobar();
+      if (ok) afterNarration(run, run.msgs.indexOf(msg));
+      else if (auto.on) stopAuto("Auto-play stopped");
+    }
   }
 }
 
 $("#sendBtn").onclick = () => {
-  if (busy) { ctl?.abort(); return; }
+  if (busy) { stopAuto(); ctl?.abort(); return; }
   const ta = $("#input"); const v = ta.value;
   if (!v.trim()) { ta.focus(); return; }
   ta.value = ""; autosize();
+  haltAll();
   submit(v, mode);
 };
 const ta = $("#input");
@@ -1164,12 +1478,14 @@ ta.addEventListener("input", autosize);
 ta.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing && window.matchMedia("(hover: hover)").matches) { e.preventDefault(); $("#sendBtn").click(); } });
 $("#btnContinue").onclick = () => {
   if (busy || !cur) return;
+  haltAll();
   cur.lastError = null;
   cur.msgs.push({ who: "player", mode: "continue", hidden: true, text: "Continue the scene." });
   generate();
 };
 $("#btnRetry").onclick = () => {
   if (busy || !cur) return;
+  haltAll();
   cur.lastError = null;
   const last = cur.msgs[cur.msgs.length - 1];
   if (!last) return;
@@ -1184,20 +1500,21 @@ $("#playMenuBtn").onclick = e => {
   if ($("#playMenu")) { closeMenu(); return; }
   const m = document.createElement("div");
   m.className = "menu"; m.id = "playMenu";
-  m.innerHTML = `<button data-a="memory">Pinned memory${cur.memory ? " ✓" : ""}</button><button data-a="info">About this story</button><button data-a="undo">Undo last turn</button><button data-a="restart" class="danger">Start over</button>`;
+  m.innerHTML = `<button data-a="voices">Voices and speed</button><button data-a="memory">Pinned memory${cur.memory ? " ✓" : ""}</button><button data-a="info">About this story</button><button data-a="undo">Undo last turn</button><button data-a="restart" class="danger">Start over</button>`;
   $("#play").append(m);
   m.querySelectorAll("button").forEach(b => b.onclick = ev => {
     ev.stopPropagation();
     const a = b.dataset.a;
     if (a === "restart") {
-      if (b.dataset.armed) { closeMenu(); if (busy) ctl?.abort(); const { kind, ref } = cur; setTimeout(() => startRun(kind, ref, true), 0); }
+      if (b.dataset.armed) { closeMenu(); haltAll(true); if (busy) ctl?.abort(); const { kind, ref } = cur; setTimeout(() => startRun(kind, ref, true), 0); }
       else { b.dataset.armed = "1"; b.textContent = "Tap again to erase this run"; }
       return;
     }
     closeMenu();
     if (a === "info") openDetailInfo();
     if (a === "memory") openMemory();
-    if (a === "undo") undoTurn();
+    if (a === "voices") openVoices();
+    if (a === "undo") { haltAll(); undoTurn(); }
   });
 };
 document.addEventListener("click", e => { if ($("#playMenu") && !e.target.closest("#playMenu")) closeMenu(); });
@@ -1222,6 +1539,193 @@ function openDetailInfo() {
 function openMemory() {
   openSheet(`<div class="form"><div class="field"><label for="memText" style="font-size:16px">Pinned memory</label><span class="hint">Facts the narrator should never forget in this story: names, promises, secrets, how a character feels about you.</span><textarea id="memText" style="min-height:140px" placeholder="e.g. Lisette knows about my Archive skill. I promised Mira I'd find her brother.">${esc(cur.memory || "")}</textarea></div><div class="actions"><button class="btn" id="memSave">Save memory</button></div></div>`,
     sc => sc.querySelector("#memSave").onclick = () => { cur.memory = sc.querySelector("#memText").value.trim(); saveRuns(); closeSheet(); toast("Memory pinned"); });
+}
+
+/* =========================================================
+   Audiobook + auto-play
+   ========================================================= */
+let listenOn = !!profile.listen;
+let reading = null;      // { run, mi, lines, speaker }
+let skipFlag = false;
+const auto = { on: false, left: 0, total: 0, timer: null, countdown: 0 };
+
+function lastNarrIndex() { if (!cur) return -1; for (let i = cur.msgs.length - 1; i >= 0; i--) if (cur.msgs[i].who === "narr" && cur.msgs[i].text) return i; return -1; }
+function setListen(on) {
+  listenOn = on; profile.listen = on; saveProfile();
+  if (!on) haltVoice();
+  if (cur) updateComposer();
+}
+$("#listenBtn").onclick = () => {
+  if (!Voice.engine()) { toast("Voices aren't available in this browser"); return; }
+  const on = !listenOn;
+  setListen(on);
+  if (on) {
+    Voice.unlock();
+    toast("Read aloud on");
+    const mi = lastNarrIndex();
+    if (!busy && mi >= 0) narrate(cur, mi);
+  } else toast("Read aloud off");
+};
+
+function clearHighlight() { document.querySelectorAll("#log .sg.reading").forEach(e => e.classList.remove("reading")); document.querySelectorAll("#log .replay.on").forEach(e => e.classList.remove("on")); }
+function highlight(i) {
+  if (!reading) return;
+  const l = reading.lines[i]; if (!l) return;
+  reading.speaker = l.speaker; drawAutobar();
+  clearHighlight();
+  const box = document.querySelector(`#log .msg.narr[data-i="${reading.mi}"]`);
+  box?.querySelector(".replay")?.classList.add("on");
+  const el = box?.querySelector(`.sg[data-k="${l.k}"]`);
+  if (el) { el.classList.add("reading"); el.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
+}
+async function readMsg(run, mi) {
+  const msg = run.msgs[mi];
+  if (!msg || !msg.text) return "done";
+  if (!Voice.engine()) return "error";
+  const lines = linesFor(msg.text, run);
+  if (!lines.length) return "done";
+  reading = { run, mi, lines, speaker: "" }; skipFlag = false;
+  drawAutobar();
+  const res = await Voice.play(lines, sp => voiceCfg(run, sp), highlight);
+  if (reading && reading.run === run && reading.mi === mi) { reading = null; clearHighlight(); }
+  saveRuns(); // keeps newly met speakers
+  drawAutobar();
+  if (res === "stopped") return skipFlag ? "skipped" : "stopped";
+  return res;
+}
+async function narrate(run, mi) {
+  const r = await readMsg(run, mi);
+  if (cur !== run) return;
+  if (r === "error") setListen(false);
+  if (auto.on && r !== "stopped") scheduleNext(r !== "error");
+}
+function afterNarration(run, mi) {
+  if (cur !== run || mi < 0) return;
+  if (listenOn && Voice.engine()) narrate(run, mi);
+  else if (auto.on) scheduleNext(false);
+}
+function scheduleNext(afterAudio) {
+  if (!auto.on || !cur) return;
+  if (auto.left <= 0) { stopAuto(`Auto-play finished ${auto.total} turns`); return; }
+  const last = cur.msgs[lastNarrIndex()];
+  const words = last ? stripTags(last.text).split(/\s+/).length : 0;
+  auto.countdown = afterAudio ? 2 : clamp(Math.round(words / 4), 5, 25);
+  clearInterval(auto.timer);
+  auto.timer = setInterval(() => { auto.countdown--; if (auto.countdown <= 0) autoStep(); else drawAutobar(); }, 1000);
+  drawAutobar();
+}
+function autoStep() {
+  clearInterval(auto.timer); auto.timer = null;
+  if (!auto.on || !cur || busy) return;
+  const ch = cur.choices || [];
+  const pick = ch[(cur.best || 1) - 1] || ch[0];
+  auto.left--;
+  if (pick) {
+    const turn = choiceToTurn(pick, cur.kind);
+    cur.msgs.push({ who: "player", mode: turn.mode, text: turn.text, auto: true });
+  } else cur.msgs.push({ who: "player", mode: "continue", hidden: true, text: "Continue the scene." });
+  cur.lastError = null;
+  generate();
+}
+function startAuto(n, withListen) {
+  if (!cur) return;
+  if (aiState !== "ready") { toast("Open this page in the Claude app to use auto-play"); return; }
+  haltVoice();
+  auto.on = true; auto.left = auto.total = n;
+  if (withListen && Voice.engine()) { setListen(true); Voice.unlock(); }
+  else if (!withListen && listenOn) setListen(false);
+  updateComposer(); drawAutobar();
+  if (busy) return;
+  const last = cur.msgs[cur.msgs.length - 1];
+  if (!last || last.who !== "narr") { generate(); return; }
+  afterNarration(cur, cur.msgs.length - 1);
+}
+function stopAuto(msg) {
+  const was = auto.on;
+  auto.on = false; clearInterval(auto.timer); auto.timer = null;
+  if (cur) updateComposer();
+  drawAutobar();
+  if (msg && was) toast(msg);
+}
+function haltVoice() {
+  if (reading || Voice.state !== "idle") { skipFlag = false; Voice.stop(); }
+  reading = null; clearHighlight(); drawAutobar();
+}
+function haltAll(silent) { stopAuto(silent ? null : (auto.on ? "Auto-play off" : null)); haltVoice(); }
+
+function drawAutobar() {
+  const bar = $("#autobar"); if (!bar) return;
+  const show = !!reading || auto.on;
+  bar.hidden = !show; if (!show) return;
+  let txt;
+  if (reading) txt = (Voice.state === "paused" ? "Paused" : "Reading") + (reading.speaker ? " · " + reading.speaker : "");
+  else if (auto.timer) txt = `Next move in ${auto.countdown}s`;
+  else if (busy) txt = "Writing the next scene…";
+  else txt = "Auto-play on";
+  if (auto.on) txt = `Auto ${Math.min(auto.total - auto.left, auto.total)}/${auto.total} · ` + txt;
+  $("#abText").textContent = txt;
+  $("#abPause").hidden = !reading;
+  $("#abPause").textContent = Voice.state === "paused" ? "Resume" : "Pause";
+  $("#abSkip").hidden = !(reading || auto.timer);
+}
+$("#abPause").onclick = () => { Voice.state === "paused" ? Voice.resume() : Voice.pause(); drawAutobar(); };
+$("#abSkip").onclick = () => { if (reading) { skipFlag = true; Voice.stop(); } else if (auto.timer) autoStep(); };
+$("#abStop").onclick = () => { haltAll(true); toast("Stopped"); };
+
+$("#btnAuto").onclick = () => { if (auto.on) { stopAuto("Auto-play off"); return; } openAutoSheet(); };
+function openAutoSheet() {
+  const eng = Voice.engine();
+  let n = 10;
+  openSheet(`<div class="form">
+      <div><h2 class="st">Auto-play</h2><p class="sp">The narrator picks the strongest move each turn and keeps the story going on its own. Tap Stop any time to take over.</p></div>
+      <div class="field"><span class="lbl">How many turns</span><div class="seg" role="group" aria-label="Turns" id="autoN">${[5, 10, 25].map(v => `<button type="button" data-v="${v}" aria-pressed="${v === n}">${v} turns</button>`).join("")}</div></div>
+      <label class="toggle"><input type="checkbox" id="autoListen" ${eng ? "checked" : "disabled"}> Read it aloud with character voices (audiobook)</label>
+      ${eng ? "" : `<span class="hint">Voices aren't available in this browser, so auto-play runs as text.</span>`}
+      <span class="hint">Each turn uses your Claude usage.</span>
+      <div class="actions"><button class="btn" id="autoGo">Start auto-play</button></div>
+    </div>`, sc => {
+    sc.querySelectorAll("#autoN button").forEach(b => b.onclick = () => { n = Number(b.dataset.v); sc.querySelectorAll("#autoN button").forEach(x => x.setAttribute("aria-pressed", x === b)); });
+    sc.querySelector("#autoGo").onclick = () => { const l = sc.querySelector("#autoListen").checked; closeSheet(); startAuto(n, l); };
+  });
+}
+
+function openVoices() {
+  const run = cur; const eng = Voice.engine();
+  if (!eng) { toast("Voices aren't available in this browser"); return; }
+  const dv = deviceVoices();
+  const speeds = [[0.85, "Slow"], [0.93, "Calm"], [1, "Normal"], [1.08, "Quick"], [1.18, "Fast"]];
+  const pitches = [[0.7, "Deep"], [0.82, "Low"], [1, "Mid"], [1.2, "High"], [1.4, "Bright"]];
+  const near = (arr, v) => arr.reduce((a, b) => Math.abs(b[0] - v) < Math.abs(a[0] - v) ? b : a)[0];
+  const row = sp => {
+    const c = voiceCfg(run, sp);
+    const voiceSel = eng === "claude"
+      ? `<select data-f="cv" aria-label="Voice for ${esc(sp)}">${["buttery", "airy", "glassy", "rounded"].map(v => `<option value="${v}" ${c.cv === v ? "selected" : ""}>${v[0].toUpperCase() + v.slice(1)}</option>`).join("")}</select>`
+      : `<select data-f="dv" aria-label="Voice for ${esc(sp)}">${dv.map(v => `<option value="${esc(v.voiceURI)}" ${c.dv === v.voiceURI ? "selected" : ""}>${esc(v.name)}</option>`).join("") || `<option value="">Default</option>`}</select>`;
+    const pitchSel = eng === "device" ? `<select data-f="pitch" aria-label="Pitch for ${esc(sp)}">${pitches.map(([v, l]) => `<option value="${v}" ${near(pitches, c.pitch) === v ? "selected" : ""}>${l}</option>`).join("")}</select>` : "";
+    const speedSel = `<select data-f="rate" aria-label="Speed for ${esc(sp)}">${speeds.map(([v, l]) => `<option value="${v}" ${near(speeds, c.rate) === v ? "selected" : ""}>${l}</option>`).join("")}</select>`;
+    const d = sp === "Narrator" ? "Reads the scene" : sp === "System" ? "Status windows and system messages" : sp === "You" ? "Your own spoken lines" : (descFor(run, sp) || "Met in this story");
+    return `<div class="vrow" data-sp="${esc(sp)}"><div style="min-width:0"><b>${esc(sp)}</b><small>${esc(d)}</small></div><button class="btn small ghost" data-prev>Preview</button><div class="vsel">${voiceSel}${pitchSel}${speedSel}</div></div>`;
+  };
+  openSheet(`<div><h2 class="st">Voices and speed</h2><p class="sp">${eng === "claude" ? "Using Claude voices. There are four, so characters also differ by speed." : "Using your device's voices. Pitch and speed make each character distinct."} Change the engine in MY.</p>
+    <div>${speakersFor(run).map(row).join("")}</div>
+    <div class="actions"><button class="btn ghost" id="vReset">Reset to defaults</button><button class="btn" id="vDone">Done</button></div></div>`, sc => {
+    sc.querySelectorAll(".vrow").forEach(r => {
+      const sp = r.dataset.sp;
+      r.querySelectorAll("select").forEach(s => s.onchange = () => {
+        run.voices = run.voices || {};
+        const f = s.dataset.f;
+        run.voices[sp] = Object.assign({}, run.voices[sp] || {}, { [f]: f === "rate" || f === "pitch" ? Number(s.value) : s.value });
+        saveRuns();
+      });
+      r.querySelector("[data-prev]").onclick = () => {
+        haltAll(true); Voice.unlock();
+        const text = sp === "Narrator" ? "The wind shifts, and the story turns with it." : sp === "System" ? "System notice. A new authority has been unlocked." : `This is ${sp}. Remember my voice.`;
+        Voice.play([{ k: 0, text, speaker: sp }], s2 => voiceCfg(run, s2), () => {});
+      };
+    });
+    sc.querySelector("#vReset").onclick = () => { run.voices = {}; saveRuns(); closeSheet(); openVoices(); toast("Voices reset"); };
+    sc.querySelector("#vDone").onclick = closeSheet;
+  });
 }
 
 /* ---------- boot ---------- */
