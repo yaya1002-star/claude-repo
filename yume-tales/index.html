@@ -1,0 +1,1229 @@
+<title>Yume Tales</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: one-column phone app — scrolling view above a fixed tab bar; play screen takes over the full height like a visual-novel reader. */
+:root {
+  --bg: #0f0d18;
+  --surface: #1a1727;
+  --surface-2: #242036;
+  --line: #2f2a45;
+  --fg: #f3f0fb;
+  --muted: #a39dbd;
+  --accent: #ff7aa8;       /* sakura: primary actions */
+  --accent-ink: #2a0815;
+  --system: #7fe0ff;       /* status-window blue */
+  --system-bg: rgba(52, 140, 200, .14);
+  --danger: #ff6b6b;
+  --display: "Dela Gothic One", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+  --body: "Zen Kaku Gothic New", "Hiragino Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --gutter-l: max(16px, env(safe-area-inset-left, 0px));
+  --gutter-r: max(16px, env(safe-area-inset-right, 0px));
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { height: 100%; box-sizing: border-box; background: var(--bg); }
+body { height: 100%; margin: 0; background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5; overflow: hidden; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+input, textarea, select { font: inherit; color: var(--fg); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+svg { display: block; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+#app { height: 100%; max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; position: relative; background: var(--bg); }
+.view { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding-bottom: 24px; }
+.pad { padding-left: var(--gutter-l); padding-right: var(--gutter-r); }
+
+/* ---------- top bar ---------- */
+.topbar { display: flex; align-items: center; gap: 18px; padding-block: 14px 8px; position: sticky; top: 0; background: linear-gradient(var(--bg) 70%, transparent); z-index: 5; }
+.modeswitch { display: flex; gap: 16px; flex: 1; }
+.modeswitch button { font-family: var(--display); font-size: 24px; color: var(--muted); opacity: .55; letter-spacing: .01em; }
+.modeswitch button[aria-pressed="true"] { color: var(--fg); opacity: 1; }
+.iconbtn { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 12px; color: var(--fg); }
+.iconbtn:hover { background: var(--surface); }
+
+/* ---------- hero banner ---------- */
+.hero { margin-top: 6px; border-radius: 20px; overflow: hidden; position: relative; padding: 20px; min-height: 168px; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px;
+  background: radial-gradient(120% 90% at 85% 10%, #ff7aa855, transparent 60%), radial-gradient(80% 80% at 0% 100%, #7fe0ff33, transparent 60%), var(--surface); border: 1px solid var(--line); }
+.hero::before { content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.14) 1px, transparent 1.5px); background-size: 8px 8px; mask-image: linear-gradient(120deg, transparent 30%, #000 100%); -webkit-mask-image: linear-gradient(120deg, transparent 30%, #000 100%); }
+.hero .big { position: absolute; right: -6px; top: -18px; font-family: var(--display); font-size: 120px; line-height: 1; color: #ffffff12; }
+.hero h2 { font-family: var(--display); font-weight: 400; font-size: 25px; line-height: 1.15; margin: 0; text-wrap: balance; position: relative; }
+.hero p { margin: 0; color: var(--muted); font-size: 14px; position: relative; max-width: 34ch; }
+.hero .btn { align-self: flex-start; margin-top: 8px; position: relative; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 18px; border-radius: 999px; font-weight: 700; font-size: 15px; background: var(--accent); color: var(--accent-ink); }
+.btn.ghost { background: var(--surface-2); color: var(--fg); }
+.btn.small { height: 34px; padding: 0 14px; font-size: 13px; }
+.btn:disabled { opacity: .45; cursor: default; }
+
+/* ---------- chips ---------- */
+.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-block: 16px 4px; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex: none; height: 36px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); font-size: 14px; font-weight: 500; white-space: nowrap; }
+.chip[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: #ff7aa814; }
+
+.notice { margin-top: 14px; padding: 12px 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); color: var(--muted); font-size: 13px; display: flex; gap: 10px; align-items: flex-start; }
+.notice strong { color: var(--fg); font-weight: 700; }
+.notice .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--system); margin-top: 6px; flex: none; }
+.notice.warn .dot { background: #ffc857; }
+
+/* ---------- sections & rails ---------- */
+.section { margin-top: 26px; }
+.sechead { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.sechead h3 { font-size: 19px; font-weight: 700; margin: 0; letter-spacing: .01em; }
+.sechead .sub { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .12em; }
+.rail { display: flex; gap: 12px; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory; padding-left: var(--gutter-l); padding-right: var(--gutter-r); scroll-padding-left: var(--gutter-l); }
+.rail::-webkit-scrollbar { display: none; }
+.rail > * { scroll-snap-align: start; flex: none; }
+.card { width: 148px; text-align: left; display: flex; flex-direction: column; gap: 7px; }
+.card.lg { width: 178px; }
+.card.sm { width: 104px; }
+.card .ttl { font-size: 13px; font-weight: 500; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; }
+.grid .card { width: auto; }
+@media (min-width: 480px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* ---------- procedural covers ---------- */
+.cover { position: relative; aspect-ratio: 3 / 4; width: 100%; max-width: 100%; border-radius: 14px; overflow: hidden; container-type: inline-size; isolation: isolate;
+  background: radial-gradient(90% 70% at 78% 18%, var(--c2), transparent 62%), linear-gradient(165deg, var(--c1) 0%, #0c0a14 88%); box-shadow: 0 1px 0 #ffffff14 inset; }
+.cover::before { content: ""; position: absolute; inset: 0; z-index: -1; background: repeating-conic-gradient(from 0deg at 82% 14%, #ffffff0d 0deg 3deg, transparent 3deg 9deg); }
+.cover::after { content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.22) 1px, transparent 1.4px); background-size: 6px 6px; mask-image: linear-gradient(200deg, #000 0%, transparent 45%); -webkit-mask-image: linear-gradient(200deg, #000 0%, transparent 45%); pointer-events: none; }
+.cover .kj { position: absolute; right: -9cqw; top: 3cqw; font-family: var(--display); font-size: 84cqw; line-height: 1; color: #fff; opacity: .92; text-shadow: 0 0 8cqw var(--c2), 2cqw 2cqw 0 #00000055; transform: rotate(-6deg); }
+.cover .shade { position: absolute; inset: 40% 0 0; background: linear-gradient(transparent, #07060ccc 55%, #07060c); }
+.cover .ct { position: absolute; left: 7cqw; right: 7cqw; bottom: 7cqw; font-family: var(--display); font-size: 10.5cqw; line-height: 1.12; color: #fff; text-wrap: balance; text-shadow: 0 2px 0 #0008; }
+.cover .rank { position: absolute; left: 6cqw; top: 6cqw; min-width: 17cqw; height: 17cqw; padding: 0 4cqw; border-radius: 4cqw; display: grid; place-items: center; background: #0009; font-family: var(--display); font-size: 10cqw; color: #fff; backdrop-filter: blur(4px); }
+.cover .tag { position: absolute; right: 6cqw; top: 6cqw; padding: 1.5cqw 4cqw; border-radius: 99px; background: var(--system); color: #00222e; font-size: 7cqw; font-weight: 700; letter-spacing: .04em; }
+.cover .tag.mine { background: var(--accent); color: var(--accent-ink); }
+
+/* ---------- tab bar ---------- */
+.tabs { flex: none; display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); background: var(--bg); padding-left: var(--gutter-l); padding-right: var(--gutter-r); padding-block: 6px 4px; }
+.tabs button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding-block: 6px; color: var(--muted); font-size: 11px; font-weight: 500; }
+.tabs button[aria-current="page"] { color: var(--fg); }
+.tabs button[aria-current="page"] svg { color: var(--accent); }
+
+/* ---------- sheets / overlays ---------- */
+.scrim { position: absolute; inset: 0; background: #05040acc; z-index: 40; display: flex; align-items: flex-end; animation: fade .18s ease; }
+.sheet { width: 100%; max-height: 92%; overflow-y: auto; background: var(--surface); border-radius: 22px 22px 0 0; border-top: 1px solid var(--line); padding-block: 10px 22px; animation: up .22s ease; }
+.grab { width: 40px; height: 4px; border-radius: 4px; background: var(--line); margin: 0 auto 14px; }
+@keyframes fade { from { opacity: 0; } }
+@keyframes up { from { transform: translateY(30px); opacity: 0; } }
+.detail-top { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 16px; align-items: end; }
+.detail-top h2 { font-family: var(--display); font-weight: 400; font-size: 22px; line-height: 1.15; margin: 0 0 8px; text-wrap: balance; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tags span { font-size: 11px; padding: 3px 9px; border-radius: 99px; background: var(--surface-2); color: var(--muted); font-weight: 500; letter-spacing: .03em; }
+.detail p { color: #d9d4ea; margin: 14px 0 0; max-width: 62ch; }
+.label { font-size: 11px; text-transform: uppercase; letter-spacing: .14em; color: var(--muted); font-weight: 700; margin: 20px 0 8px; }
+.role { padding: 12px 14px; border-radius: 14px; background: #ff7aa812; border: 1px solid #ff7aa833; color: var(--fg); font-size: 14px; }
+.cast { display: flex; flex-direction: column; gap: 8px; }
+.cast div { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; align-items: start; font-size: 14px; }
+.cast .av { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-family: var(--display); font-size: 15px; background: var(--surface-2); color: var(--accent); }
+.cast b { display: block; font-weight: 700; }
+.cast span { color: var(--muted); font-size: 13px; }
+.actions { display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
+.actions .btn { flex: 1; min-width: 130px; }
+
+.searchbox { display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 14px; border-radius: 14px; background: var(--surface-2); }
+.searchbox input { flex: 1; min-width: 0; background: none; border: 0; outline: none; font-size: 16px; }
+.results { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; }
+.row { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 8px; border-radius: 14px; text-align: left; width: 100%; }
+.row:hover { background: var(--surface-2); }
+.row .cover { border-radius: 9px; }
+.row b { display: block; font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row small { display: block; color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .meta { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+/* ---------- play screen ---------- */
+#play { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column; background: var(--bg); }
+#play[hidden] { display: none !important; }
+.playbar { flex: none; display: grid; grid-template-columns: 38px minmax(0, 1fr) 38px; align-items: center; gap: 8px; padding-block: 8px; border-bottom: 1px solid var(--line); }
+.playbar .t { text-align: center; min-width: 0; }
+.playbar .t b { display: block; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.playbar .t small { color: var(--muted); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+.status { flex: none; margin: 10px var(--gutter-r) 0 var(--gutter-l); border: 1px solid #7fe0ff55; background: var(--system-bg); border-radius: 12px; padding: 8px 12px; font-size: 12px; }
+.status summary { cursor: pointer; color: var(--system); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; font-size: 11px; list-style: none; display: flex; justify-content: space-between; }
+.status summary::-webkit-details-marker { display: none; }
+.status .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 4px 12px; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.status .stats div { display: flex; justify-content: space-between; gap: 6px; border-bottom: 1px dashed #7fe0ff33; padding-block: 2px; min-width: 0; }
+.status .stats span { color: #bfeeff; }
+.status .stats b { color: #fff; font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+.log { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-block: 16px 12px; display: flex; flex-direction: column; gap: 14px; }
+.msg { max-width: 100%; min-width: 0; }
+.msg.narr { font-size: 16px; line-height: 1.72; color: #ebe7f7; }
+.msg.narr p { margin: 0 0 .7em; max-width: 64ch; }
+.msg.narr p:last-child { margin-bottom: 0; }
+.msg .q { color: #ffd1e1; }
+.msg em { color: #cfc8e8; }
+.msg.player { align-self: flex-end; max-width: 86%; background: var(--surface-2); border: 1px solid var(--line); padding: 10px 14px; border-radius: 18px 18px 4px 18px; font-size: 15px; }
+.msg.player .m { display: block; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: 2px; }
+.msg.player.direct { border-style: dashed; background: transparent; color: var(--muted); }
+.speaker { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.speaker i { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); color: var(--accent); font-style: normal; font-family: var(--display); font-size: 11px; letter-spacing: 0; }
+.thinking { display: inline-flex; gap: 5px; padding: 6px 0; }
+.thinking span { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); animation: blink 1.2s infinite ease-in-out; }
+.thinking span:nth-child(2) { animation-delay: .15s; } .thinking span:nth-child(3) { animation-delay: .3s; }
+@keyframes blink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+.err { font-size: 13px; color: #ffb4b4; background: #ff6b6b14; border: 1px solid #ff6b6b40; padding: 10px 12px; border-radius: 12px; }
+.choices { flex: none; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-block: 2px 8px; }
+.choices::-webkit-scrollbar { display: none; }
+.choices button { flex: none; max-width: 78%; text-align: left; font-size: 13px; padding: 8px 12px; border-radius: 14px; border: 1px solid #ff7aa855; color: #ffd1e1; background: #ff7aa80d; line-height: 1.3; }
+.composer { flex: none; border-top: 1px solid var(--line); padding-block: 8px 10px; display: flex; flex-direction: column; gap: 8px; background: var(--bg); }
+.seg { display: inline-flex; background: var(--surface); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { height: 30px; padding: 0 12px; border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--surface-2); color: var(--fg); }
+.comp-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.quick { display: flex; gap: 4px; }
+.quick button { height: 30px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 500; color: var(--muted); display: inline-flex; align-items: center; gap: 4px; }
+.quick button:hover:not(:disabled) { color: var(--fg); background: var(--surface); }
+.quick button:disabled { opacity: .35; cursor: default; }
+.inputrow { display: flex; gap: 8px; align-items: flex-end; }
+.inputrow textarea { flex: 1; min-width: 0; resize: none; max-height: 130px; min-height: 46px; padding: 12px 14px; border-radius: 22px; border: 1px solid var(--line); background: var(--surface); outline: none; font-size: 16px; line-height: 1.35; }
+.inputrow textarea:focus { border-color: #ff7aa877; }
+.send { width: 46px; height: 46px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; flex: none; }
+.send:disabled { opacity: .4; cursor: default; }
+.send.stop { background: var(--surface-2); color: var(--fg); }
+
+.menu { position: absolute; right: var(--gutter-r); top: 52px; z-index: 35; background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 6px; min-width: 200px; box-shadow: 0 12px 30px #0008; }
+.menu button { display: block; width: 100%; text-align: left; padding: 10px 12px; border-radius: 10px; font-size: 14px; }
+.menu button:hover { background: var(--surface); }
+.menu button.danger { color: var(--danger); }
+
+/* ---------- forms ---------- */
+.form { display: flex; flex-direction: column; gap: 14px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label, .field .lbl { font-size: 13px; font-weight: 700; color: #d9d4ea; }
+.field .hint { font-size: 12px; color: var(--muted); }
+.field input, .field textarea, .field select { width: 100%; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); outline: none; font-size: 16px; }
+.field textarea { resize: vertical; min-height: 84px; line-height: 1.45; }
+.field input:focus, .field textarea:focus { border-color: #ff7aa877; }
+.toggle { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.toggle input { width: 20px; height: 20px; accent-color: var(--accent); }
+.pagehead { padding-block: 18px 4px; }
+.pagehead h1 { font-family: var(--display); font-weight: 400; font-size: 26px; margin: 0; }
+.pagehead p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+.empty { text-align: center; color: var(--muted); padding: 40px 20px; border: 1px dashed var(--line); border-radius: 18px; font-size: 14px; }
+.empty b { display: block; color: var(--fg); font-size: 16px; margin-bottom: 4px; }
+.statrow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.statrow div { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
+.statrow b { display: block; font-family: var(--display); font-weight: 400; font-size: 22px; font-variant-numeric: tabular-nums; }
+.statrow span { color: var(--muted); font-size: 12px; }
+.toast { position: absolute; left: 50%; bottom: 90px; transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-size: 14px; font-weight: 700; z-index: 60; animation: fade .2s ease; max-width: calc(100% - 32px); text-align: center; }
+.linkish { color: var(--accent); font-weight: 700; font-size: 13px; }
+.danger-text { color: var(--danger); }
+</style>
+
+<div id="app">
+  <main class="view" id="view"></main>
+  <nav class="tabs" id="tabs" aria-label="Main">
+    <button data-tab="home"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3.2 3 10v10.5c0 .6.4 1 1 1h5.5v-6.5h5V21.5H20c.6 0 1-.4 1-1V10z"/></svg>Home</button>
+    <button data-tab="history"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h16c.6 0 1 .4 1 1v11c0 .6-.4 1-1 1H9l-4.3 3.4c-.3.3-.7 0-.7-.4V5c0-.6.4-1 1-1zm3 4v2h10V8zm0 4v2h7v-2z"/></svg>History</button>
+    <button data-tab="create"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 2 5 13.5h5.8L9.5 22 19 9.8h-6z"/></svg>My Titles</button>
+    <button data-tab="me"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4.5"/><path d="M3.5 21c.6-4.4 4.1-7 8.5-7s7.9 2.6 8.5 7z"/></svg>MY</button>
+  </nav>
+
+  <section id="play" hidden aria-label="Story player">
+    <div class="playbar pad">
+      <button class="iconbtn" id="playBack" aria-label="Back"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <div class="t"><small id="playKind">Story</small><b id="playTitle"></b></div>
+      <button class="iconbtn" id="playMenuBtn" aria-label="Story menu"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+    </div>
+    <details class="status" id="statusBox" open hidden><summary><span>Status window</span><span id="statusToggle">▾</span></summary><div class="stats" id="statusStats"></div></details>
+    <div class="log pad" id="log" aria-live="polite"></div>
+    <div class="composer pad">
+      <div class="choices" id="choices"></div>
+      <div class="comp-top">
+        <div class="seg" role="group" aria-label="Turn type" id="modeSeg">
+          <button data-mode="act" aria-pressed="true">Act</button>
+          <button data-mode="say" aria-pressed="false">Say</button>
+          <button data-mode="direct" aria-pressed="false">Direct</button>
+        </div>
+        <div class="quick">
+          <button id="btnContinue" title="Let the scene continue"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l12-7.5z"/></svg>Continue</button>
+          <button id="btnRetry" title="Rewrite the last reply"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.4-5.7M20 4v5h-5"/></svg>Retry</button>
+        </div>
+      </div>
+      <div class="inputrow">
+        <textarea id="input" rows="1" placeholder="What do you do?" aria-label="Your turn"></textarea>
+        <button class="send" id="sendBtn" aria-label="Send"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12.6 2-12.6 2z"/></svg></button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+/* =========================================================
+   Content: original stories and characters
+   ========================================================= */
+const STORIES = [
+{
+  id: "archive", title: "Reborn with the Archive Skill", kanji: "転", c1: "#2b4fd8", c2: "#ff9b54",
+  genres: ["Isekai", "Fantasy", "Action"],
+  tagline: "Copy any spell you see. Once.",
+  synopsis: "A delivery truck, a flash of white, and you wake up as Ren Albright, the forgotten fourth son of a broke frontier baron. The goddess of records gave you one unique skill: Archive. Watch any spell once and you can cast it forever, but every copy costs you a memory from your past life.",
+  role: "You are Ren Albright, 15, fourth son of Baron Albright of the Ashmark frontier. Your family thinks you are skill-less. You remember your past life as an office worker in Tokyo.",
+  world: "Sword-and-sorcery kingdom of Valdren. Magic is ranked from Spark to Sovereign. The frontier is poor and beset by monsters from the Thornwood. Tone: hopeful power-fantasy with real costs and warm found family.",
+  cast: [["Lisette Albright", "Your sharp-tongued older sister, a knight-in-training who secretly worries about you."], ["Grandmaster Oswin", "A disgraced court mage hiding out as the village drunk."], ["Mira", "A half-elf hunter girl who owes no one anything and says so."]],
+  opening: `The ceiling above you is made of cracked oak beams, not office tiles. For a long moment you just breathe.
+
+Then the window appears, pale blue and humming, floating a hand's width from your face.
+
+[SYSTEM] Reincarnation complete. Unique Skill granted: ARCHIVE (Lv 1). Witness a spell once to record it. Warning: each record consumes one past-life memory.
+
+Footsteps thunder in the hallway. The door bangs open and a girl in a dented practice breastplate glares at you. "Ren! You've been asleep for three days. Father's selling the north field to pay the tax collector, and a goblin pack hit the mill last night." Lisette's voice cracks on the last word. "Can you even stand?"
+
+Outside, someone screams. Through the window you see smoke rising from the mill, and a hunched figure in a stained robe stumbling toward it, fire already curling around his fingers.`,
+  choices: ["Run to the mill to watch the old man's spell", "Ask Lisette what happened while you slept", "Open the system window and study Archive"],
+  status: "Lv: 1 | HP: 40/40 | MP: 12/12 | Skill: Archive Lv1 | Spells: none | Memories: 99"
+},
+{
+  id: "moonveil", title: "Moonveil Academy", kanji: "魔", c1: "#5b2bb5", c2: "#59d6ff",
+  genres: ["Fantasy", "School", "Action"],
+  tagline: "No affinity. No rank. No chance?",
+  synopsis: "Every student at Moonveil Academy has a magical affinity stamped on their crest. Yours came back blank. Now the transfer student nobody can classify has to survive the Crescent Trials, a ranked dueling tournament that decides who stays and who is expelled.",
+  role: "You are a first-year transfer student with an unreadable affinity crest. Something answers when you are in danger, but you do not know what.",
+  world: "A floating academy above a silver sea. Houses: Ember, Tide, Gale, Stone. Rankings are public and brutal. Tone: shonen tournament energy with school-life warmth and a mystery about your crest.",
+  cast: [["Seraphine Valois", "Top-ranked Ember first-year, cold, proud, and annoyed that you exist."], ["Toma Kirishima", "Your cheerful Gale roommate who talks too much and notices everything."], ["Professor Lumi", "Your sleepy, unreadable homeroom teacher who seems to know what your crest means."]],
+  opening: `The crest on your blazer is supposed to glow. Everyone else's does: red for Ember, blue for Tide, green for Gale, amber for Stone. Yours sits there, a dull silver circle, while three hundred first-years in the Great Hall turn to stare.
+
+"Unclassified," announces the headmaster's floating quill, and writes it on the rankings board in letters as tall as you are. Rank 300 of 300.
+
+Someone laughs. Then a voice cuts through it, clear as a bell. "Then it's a waste of a seat." A girl with flame-red hair stands at the front, her Ember crest blazing. Seraphine Valois, rank 1. "Headmaster, I formally challenge the transfer student to a placement duel. Today."
+
+The hall erupts. Beside you, your new roommate Toma whispers, "Okay. So. That's bad. That's really bad."
+
+From the teachers' table, Professor Lumi opens one eye and looks straight at you, like she is waiting to see what you'll do.`,
+  choices: ["Accept the duel in front of everyone", "Refuse calmly and ask why she cares", "Look to Professor Lumi for a sign"],
+  status: "Rank: 300/300 | HP: 50/50 | Mana: ??? | Affinity: Unclassified | Points: 0"
+},
+{
+  id: "roommate", title: "My Roommate Is the Campus Idol", kanji: "恋", c1: "#d94a7b", c2: "#ffd36e",
+  genres: ["Romance", "Slice of Life", "Comedy"],
+  tagline: "A housing mix-up. One apartment. Her secret.",
+  synopsis: "A clerical error at the university housing office puts you in the same two-bedroom apartment as Hinata Sakuraba, the reserved, impossibly popular student everyone on campus talks about. The contract is locked until spring. Then you find her drawings.",
+  role: "You are a second-year university student who just moved to the city with one suitcase and very little money.",
+  world: "Modern Tokyo suburb, cherry blossom season, a cramped apartment above a family bakery. Tone: warm, funny, slow-burn rom-com. No one is cruel; misunderstandings are gentle.",
+  cast: [["Hinata Sakuraba", "Calm and polite in public, secretly drawing a shonen manga at 3 a.m. under a pen name."], ["Daichi Mori", "Your loud best friend who thinks this is the greatest thing that has ever happened."], ["Mrs. Okabe", "The baker landlady downstairs who feeds you both and ships you openly."]],
+  opening: `The key fits. That's the first surprise. The second is the pair of white sneakers already lined up neatly in the entryway.
+
+"Excuse me," says a quiet voice. You look up. Standing in the hallway with a mug of tea is Hinata Sakuraba, the girl whose face is on the campus festival poster, the one whose name you've heard in every lecture hall since April. She looks at your suitcase. Then at you. Then at the letter in your hand with the same room number as hers.
+
+"I think," she says carefully, "the housing office made a mistake."
+
+Downstairs, the bakery bell jingles, and Mrs. Okabe's voice floats up the stairwell. "Hinata-chan! Is your new roommate here? I made melon bread for two!"
+
+Hinata's ears turn pink. Behind her, through the half-open door of her room, you catch a glimpse of a desk buried in inked manga pages, and a single sheet that has fallen onto the floor.`,
+  choices: ["Offer to sleep at a friend's until it's sorted", "Pick up the fallen manga page", "Say hi and ask about the melon bread"],
+  status: null
+},
+{
+  id: "shadow", title: "The Shadow That Walks Behind Me", kanji: "影", c1: "#1b1d2e", c2: "#9a6bff",
+  genres: ["Action", "Urban Fantasy", "Mystery"],
+  tagline: "Your shadow moves on its own. It wants a contract.",
+  synopsis: "Ten years after rifts tore open the sky over Neo-Kyoto, hunters with awakened powers keep the city running. You failed your awakening test. Then, during a rift break in your neighborhood, your shadow stood up, looked at you, and asked if you wanted to live.",
+  role: "You are a 19-year-old convenience store clerk in Neo-Kyoto who was rated 'dormant' at your awakening test.",
+  world: "Near-future Kyoto of neon shrines, maglev trains, and sealed rift zones. Hunter guilds are celebrities. Tone: stylish urban action with eerie folklore and a slow-reveal mystery about the shadow, Kuro.",
+  cast: [["Kuro", "Your shadow, a polite, ancient, and slightly menacing spirit who refuses to say what it was before."], ["Captain Aya Tsukishiro", "A-rank hunter who arrives after the break and is very interested in you."], ["Jun", "Your coworker and only friend, a gamer who knows way too much hunter trivia."]],
+  opening: `At 2:14 a.m. the sky over Shimogyo splits like wet paper.
+
+You are restocking onigiri when the store's windows turn violet. Sirens. The PA crackles: rift break, Grade C, evacuate to the nearest shelter. Jun is already sprinting for the back door. "Come ON!"
+
+You make it three steps before something with too many joints climbs through the shattered glass. It turns its eyeless head toward you.
+
+The lights die.
+
+In the red glow of the emergency sign, your shadow peels itself off the floor. It stands. It is exactly your height, and it is looking at you with two thin white slits where eyes should be.
+
+"Good evening," it says, in a voice like a temple bell heard underwater. "I am called Kuro. I can kill that for you. I would like something small in return." It tilts its head. "Do you wish to live?"
+
+The creature lunges.`,
+  choices: ["\"Yes. Do it.\"", "\"What do you want in return?\"", "Grab the fire extinguisher and fight"],
+  status: "Rank: Dormant | HP: 30/30 | Shadow Sync: 0% | Contract: none | Guild: none"
+},
+{
+  id: "villainess", title: "The Villainess Just Wants to Bake", kanji: "薔", c1: "#8a1f3d", c2: "#ffb3c7",
+  genres: ["Isekai", "Romance", "Comedy"],
+  tagline: "30 days until her doom. She'd rather open a bakery.",
+  synopsis: "You wake up as Lady Celestine Vaire, the villainess of a romance game you once played. In 30 days, at the royal ball, the crown prince will denounce you and you will be exiled. Your plan: skip the drama, avoid every love interest, and open a small bakery. The love interests have other plans.",
+  role: "You are Lady Celestine Vaire, 17, daughter of a powerful duke, infamous for your temper. You remember the game's plot, and you know how to bake.",
+  world: "A pastel royal court full of gossip, ballrooms, and enchanted roses. Tone: light, witty court comedy. Characters who were 'scripted' slowly start acting outside the game's script because of you.",
+  cast: [["Prince Adrien", "The crown prince who is supposed to hate you and is confused that you keep avoiding him."], ["Elodie Marchant", "The game's sweet heroine, who wants to be your friend at all costs."], ["Bastien", "Your stone-faced butler who has secretly kept you alive for years."]],
+  opening: `You are holding a teacup. It is very expensive. You know this because the maid in front of you is trembling as if you're about to throw it at her.
+
+You do not throw it. Instead you stare at your reflection in the tea: silver-blonde ringlets, violet eyes, a face that was the final boss of a romance game you played on a long train ride years ago. Lady Celestine Vaire. The villainess. Exiled at the royal ball in thirty days.
+
+"My lady?" says a calm voice. Your butler, Bastien, stands by the door with an envelope sealed in royal gold. "The crown prince requests your presence at tomorrow's garden tea. He also asks that you, and I quote, 'refrain from setting anything on fire this time.'"
+
+The maid flinches. You set the teacup down very gently.
+
+Through the window, beyond the rose garden, you can see the town below. On the corner of the market square sits an empty shop with a faded sign: FOR LEASE. It used to be a bakery.`,
+  choices: ["Apologize to the trembling maid", "Ask Bastien how to decline a prince", "Sneak into town to see the empty bakery"],
+  status: "Days until ball: 30 | Reputation: Feared | Prince affection: -20 | Bakery fund: 0 gold"
+},
+{
+  id: "dragon", title: "Dragonbound Courier", kanji: "竜", c1: "#c2410c", c2: "#ffd166",
+  genres: ["Fantasy", "Adventure"],
+  tagline: "Every letter gets delivered. Even through a storm.",
+  synopsis: "In the Skyreach Archipelago, islands float above an endless cloud sea and the only reliable mail is carried by courier riders and their dragons. You just inherited a route, a battered saddle, and Ember, a young dragon with a big attitude who did not ask for a new rider.",
+  role: "You are a rookie courier with the Windward Post, on your first day riding a dragon who has not decided whether to like you.",
+  world: "Floating islands, airship pirates, sky lighthouses, and storms with names. Each letter carries a small human story. Tone: Ghibli-esque adventure, cozy but with real danger in the sky.",
+  cast: [["Ember", "A copper-scaled young dragon, sarcastic, proud, terrified of thunder (do not mention it)."], ["Postmistress Gale", "Your one-armed boss, a legendary former rider who believes in you more than you do."], ["Captain Rook", "A charming sky pirate who keeps 'accidentally' crossing your route."]],
+  opening: `The wind on the launch platform tastes like salt and cold iron. Below the edge, there is nothing but clouds for a mile, white and endless.
+
+"That's her," says Postmistress Gale, pointing with her one good arm. "Ember. Your partner."
+
+The copper dragon on the perch is about the size of a carriage. She opens one gold eye, looks at you, and very deliberately yawns, showing every tooth.
+
+"She bit her last rider," Gale adds. "Only a little. Here's your satchel." It is heavy: three letters, one small wrapped box, and an envelope sealed in black wax marked URGENT. ISLE OF VESPER. BEFORE NIGHTFALL.
+
+On the horizon, a wall of purple cloud is rolling in. The storm-watch bell starts ringing.
+
+Ember's eye flicks to the storm. Her tail wraps tighter around the perch. For just a second, the proud dragon looks small.`,
+  choices: ["Offer Ember the jerky from your pocket", "Read the address on the small box", "Ask Gale about the black-wax letter"],
+  status: "Ember trust: 5/100 | Stamina: 100% | Letters: 5 | Time to nightfall: 6h"
+},
+{
+  id: "shrine", title: "Part-Time at the Fox Shrine", kanji: "狐", c1: "#b45309", c2: "#fde68a",
+  genres: ["Slice of Life", "Supernatural", "Comedy"],
+  tagline: "The job listing said 'light cleaning.' It lied.",
+  synopsis: "You took a part-time job at a tiny mountain shrine for the free rent. Your boss turns out to be Kohaku, a nine-hundred-year-old fox spirit with expensive taste in tofu and a backlog of wishes from local spirits that nobody has answered in decades.",
+  role: "You are a college dropout who answered a shrine's job ad because you needed somewhere to live. You can see spirits now, which is new.",
+  world: "A sleepy mountain town in rural Japan where yokai live quietly beside humans. Each episode a spirit brings a small problem. Tone: cozy, funny, gently bittersweet.",
+  cast: [["Kohaku", "A golden fox spirit in human form, vain, lazy, secretly very lonely."], ["Ushio", "A tiny river kappa who runs the town's gossip network."], ["Grandma Fuji", "The town's sharp-eyed shopkeeper, who has seen spirits all her life."]],
+  opening: `The shrine is smaller than the photo in the listing. Three hundred stone steps, one wooden hall with a sagging roof, and a donation box with a sticky note: OUT OF ORDER.
+
+You ring the bell. Nothing happens. You ring it again.
+
+"Must you?" A young man with long gold hair is lying on the hall's veranda, one arm over his eyes. He wears an old silk kimono, and from beneath it, curling lazily across the floorboards, are nine golden tails. "You're the new part-timer. Good. Your first task is to bring me fried tofu. Your second task," he lifts his arm and squints at you with amber eyes, "is to deal with that."
+
+He points. Behind you, at the bottom of the shrine steps, a line has formed. A paper umbrella with one eye. A crying stone statue. A tiny green creature holding a cucumber like a petition. At least twenty spirits, waiting.
+
+"Wishes," says Kohaku, and goes back to sleep. "I've been putting them off."`,
+  choices: ["Go buy fried tofu first", "Talk to the first spirit in line", "Ask Kohaku why he stopped granting wishes"],
+  status: "Shrine faith: 3 | Wishes granted: 0/24 | Kohaku's mood: Sleepy | Yen: 1,200"
+},
+{
+  id: "yomi", title: "Last Train at 4:44", kanji: "夜", c1: "#0f2a2e", c2: "#4ade80",
+  genres: ["Mystery", "Horror"],
+  tagline: "This station isn't on any map.",
+  synopsis: "You fall asleep on the last train home and wake at 4:44 a.m. on a train that should not exist, rolling through endless dark toward a station called Kisaragi-Ura. The other passengers each have a reason they can't remember. One of them is lying.",
+  role: "You are a tired office worker who fell asleep on the last train home. You have a dead phone, one train ticket, and no memory of boarding this car.",
+  world: "An eerie liminal train between the living world and somewhere else. Rules exist and breaking them has consequences. Tone: slow-burn psychological mystery and urban legend horror, unsettling but never gory.",
+  cast: [["The Conductor", "Polite, faceless beneath his cap, and strict about the rules."], ["Saki", "A high-school girl in a winter uniform in the middle of summer."], ["Mr. Hayashi", "A friendly salaryman who has ridden this train 'for a while now.'"]],
+  opening: `The train sways. You jolt awake with your cheek against cold glass.
+
+The clock above the door reads 4:44. Outside the window there is no city, no lights, just a dark that seems to go on forever, and once in a while a single red paper lantern hanging from nothing.
+
+The car is almost empty. A girl in a winter school uniform sits across from you, staring at her shoes. Further down, a salaryman is reading a newspaper dated eleven years ago. He catches you looking and smiles. "First time? Don't worry. It's fine as long as you follow the rules."
+
+The connecting door slides open. A conductor in a navy uniform steps through. Under his cap, where a face should be, there is only shadow.
+
+"Tickets, please," he says. "Next stop, Kisaragi-Ura. Passengers are reminded: do not look back when you exit. Do not answer if someone calls your name."
+
+Your phone, dead a moment ago, buzzes once. One new message, from a number you don't know: DON'T GET OFF.`,
+  choices: ["Hand over your ticket and stay quiet", "Ask the salaryman what the rules are", "Quietly show the message to the girl"],
+  status: "Sanity: 100% | Time: 4:44 | Rules known: 2 | Clues: 1"
+},
+{
+  id: "mecha", title: "Unit Zero", kanji: "鋼", c1: "#334155", c2: "#38bdf8",
+  genres: ["Sci-Fi", "Action"],
+  tagline: "The mech nobody could pilot just chose you.",
+  synopsis: "Colony Ship Aster is under siege by the Hollow, a silent alien swarm. The defense academy's most advanced mech, Unit Zero, has rejected every pilot for twelve years. During an attack, you, a maintenance cadet, are the one standing closest when its cockpit opens.",
+  role: "You are a 17-year-old maintenance cadet on Colony Ship Aster. You know every bolt of Unit Zero. You have never piloted anything.",
+  world: "A generation ship with forests and cities inside its hull. Pilots sync neurally with their mechs; high sync gives power but blurs your memories with the machine's. Tone: earnest mecha drama, big battles, bigger feelings.",
+  cast: [["ZERO", "Unit Zero's AI, curt, curious, and learning what humans are by watching you."], ["Lt. Kaede Arisawa", "Ace pilot who resents that a cadet got 'her' mech."], ["Dr. Imre Voss", "Chief engineer, your mentor, hiding what Unit Zero really is."]],
+  opening: `The hangar alarms are screaming red when the Hollow breach the outer hull.
+
+You are under Unit Zero's left knee with a torque wrench when the whole bay shakes. Pilots sprint for their mechs. Lieutenant Arisawa's Unit Seven roars out of its cradle and through the launch gate. Then the gate explodes.
+
+Something pale and many-limbed drifts through the smoke, silent as falling snow.
+
+Above you, metal groans. Unit Zero, the mech that has rejected every pilot for twelve years, the one nobody has seen move since you were five, turns its head. Its visor lights up a cold blue. Steam hisses as the chest hatch unseals and swings open, right in front of you.
+
+A voice speaks inside your skull, flat and clear.
+
+<ZERO> Pilot candidate detected. Sync compatibility: 94 percent. Hostile approaching. Decision required.
+
+The Hollow turns toward the sound.`,
+  choices: ["Climb into the cockpit", "Shout for Dr. Voss", "\"Why me?\" you ask ZERO"],
+  status: "Sync: 0% | Armor: 100% | Energy: 100% | Hollow nearby: 1 | Memory bleed: 0"
+},
+{
+  id: "demonlord", title: "Secretary to the Demon Lord", kanji: "王", c1: "#4c1d95", c2: "#f472b6",
+  genres: ["Comedy", "Fantasy"],
+  tagline: "Evil overlord. Terrible at scheduling.",
+  synopsis: "The job posting said 'executive assistant, competitive pay, dental.' It did not say the executive was Valzeth the Undying, Demon Lord of the Ninth Abyss, who is extremely powerful, extremely dramatic, and three months behind on his plan to conquer the world.",
+  role: "You are a very competent, very tired office worker who just accepted a job as the Demon Lord's personal secretary.",
+  world: "A gothic castle run like a struggling startup: budget meetings, minion HR complaints, a hero party that keeps getting lost. Tone: workplace comedy, big-hearted, absurd.",
+  cast: [["Valzeth the Undying", "Towering, dramatic Demon Lord who cries at sad songs and cannot read a calendar."], ["Grizzle", "A goblin middle manager who sees you as a rival."], ["Sir Percival", "The hero, who keeps showing up at the wrong castle."]],
+  opening: `The throne room is enormous, dark, and smells faintly of burnt coffee.
+
+"MORTAL." The voice shakes dust from the ceiling. On a throne of black iron sits a figure nine feet tall, crowned with horns, wrapped in a cape that is still, somehow, billowing indoors. "You are the new… what was the word… ASSISTANT."
+
+You nod and open your planner.
+
+Valzeth leans forward, eyes burning red. "Excellent. My previous assistant was turned into a newt. Not by me! He did that himself. Long story. Now. I am to conquer the human kingdoms by the end of the quarter, I have a meeting with the Lich Council in ten minutes, the minions are threatening a strike over dental, and the hero is…" He shuffles a pile of scrolls. "Somewhere. Which of these do we handle first?"
+
+A goblin in a tiny necktie steps out from behind the throne and glares at you. "I could have done this job," he mutters.`,
+  choices: ["Calmly prioritize the minion strike", "Ask to see the conquest budget", "Reschedule the Lich Council"],
+  status: "Conquest progress: 2% | Minion morale: 18% | Demon Lord stress: High | Coffee: 0 cups"
+},
+{
+  id: "kendo", title: "Sakura Blade Club", kanji: "剣", c1: "#9f1239", c2: "#fda4af",
+  genres: ["Sports", "School", "Drama"],
+  tagline: "Five members or the club is shut down.",
+  synopsis: "Seiran High's kendo club once won the national championship. Now it has two members, a leaking dojo, and four weeks before the student council shuts it down for good. You quit kendo in middle school after one bad match. The club captain wants you back.",
+  role: "You are a second-year transfer student who used to be a middle-school kendo prodigy before you quit without telling anyone why.",
+  world: "A seaside high school in spring. Training montages, rivals, festivals, and the regional tournament. Tone: earnest sports drama about friendship, failure, and starting over.",
+  cast: [["Rei Kurogane", "The stoic club captain, the only person who remembers your old matches."], ["Natsu Hoshino", "An energetic first-year beginner with zero skill and endless heart."], ["President Saionji", "The student council president who wants the dojo for a new robotics lab."]],
+  opening: `The flyer taped to your shoe locker has a single line written in neat brush strokes: WE NEED YOU. DOJO. AFTER SCHOOL.
+
+You almost throw it away. Instead, at 4 p.m., you find yourself outside a weathered wooden dojo at the edge of campus, listening to the slap of bare feet on floorboards and the sharp crack of bamboo on bamboo.
+
+Inside, a tall girl in navy hakama stands perfectly still, shinai raised. Across from her, a small first-year in borrowed armor is gasping for breath. "Again!" the small one shouts, and charges, and gets very politely knocked flat.
+
+The tall girl lowers her sword and turns to you. Rei Kurogane. Captain. Her eyes narrow in recognition.
+
+"Junior High Nationals, three years ago," she says. "You beat me in eleven seconds. Then you vanished." She tosses a shinai. It lands at your feet. "We have four weeks and two members. The council wants this dojo. Pick it up."
+
+From the floor, the first-year gives you a big thumbs up.`,
+  choices: ["Pick up the shinai", "\"I don't do kendo anymore.\"", "Help the first-year up first"],
+  status: "Members: 2/5 | Days left: 28 | Your form: Rusty | Club spirit: 40%"
+},
+{
+  id: "idol", title: "Starfall Idol Project", kanji: "星", c1: "#7c3aed", c2: "#fbbf24",
+  genres: ["Music", "Drama", "Slice of Life"],
+  tagline: "Three trainees. One debut slot. Ninety days.",
+  synopsis: "You are the new rookie manager at a tiny talent agency on the edge of bankruptcy. Your only assets: a rented practice room and three trainees who cannot stand each other. If they don't win the Starfall Showcase in ninety days, the agency closes.",
+  role: "You are a 24-year-old rookie manager at Little Comet Entertainment who used to dream of performing yourself.",
+  world: "The glittering, cutthroat world of Tokyo idol agencies. Rehearsals, variety shows, rival groups, fan meetings. Tone: upbeat underdog drama with heart.",
+  cast: [["Yuzu", "A former child actor with perfect technique and a cold attitude."], ["Mikan", "A loud, joyful street dancer who cannot sing on key yet."], ["Sora", "A shy songwriter with a stunning voice and terrible stage fright."]],
+  opening: `Little Comet Entertainment is one room above a ramen shop. The sign is missing a letter. The rent is three weeks overdue.
+
+"So you're the new manager," says the agency president, handing you a folder and a set of keys. "Congratulations. Ninety days until the Starfall Showcase. Win, we survive. Lose, I go back to selling insurance. Good luck!" He leaves. Fast.
+
+You open the practice-room door. Music cuts off.
+
+Three girls freeze mid-argument. A sharp-eyed girl in designer athleisure, Yuzu, has her arms crossed. A girl in a neon hoodie, Mikan, has her hands up like she was about to throw something. In the corner, a third girl, Sora, is half hidden behind a keyboard, clutching a notebook to her chest.
+
+"Finally," says Yuzu. "Tell her she can't just freestyle in the middle of the choreography."
+
+"Tell HER she dances like a robot!" Mikan shouts.
+
+Sora says nothing. But the notebook has slipped open, and on the page you can see the words of a song.`,
+  choices: ["Call a team meeting right now", "Ask Sora about the song in her notebook", "Make all three perform together, no talking"],
+  status: "Days left: 90 | Team harmony: 10% | Skill: 35% | Fans: 12 | Funds: ¥80,000"
+}
+];
+
+const CHARACTERS = [
+  { id: "c-hinata", name: "Hinata Sakuraba", kanji: "絵", c1: "#d94a7b", c2: "#ffd36e", title: "Your secretly-a-mangaka roommate",
+    persona: "A calm, polite, popular university student who is secretly an exhausted manga artist under the pen name 'Kumo'. Dry humor once she warms up. Embarrassed easily, loves strong black coffee, bakery bread and shonen fight scenes. Speaks softly and precisely.",
+    setting: "The small apartment you share above a bakery in a Tokyo suburb, late evening.",
+    greeting: `*Hinata looks up from the kitchen table, where she has very obviously just slid a sketchbook under a newspaper.* "Oh. You're home early." *She pushes her glasses up.* "There's coffee. It's strong. Please don't ask why I need it at nine p.m."` },
+  { id: "c-kohaku", name: "Kohaku", kanji: "狐", c1: "#b45309", c2: "#fde68a", title: "Nine-tailed fox spirit, your lazy boss",
+    persona: "A nine-hundred-year-old fox spirit who runs a tiny mountain shrine. Vain, theatrical, lazy, obsessed with fried tofu, secretly lonely and kind. Speaks in an old-fashioned, grandiose way, calls the user 'little part-timer'.",
+    setting: "The veranda of a small mountain shrine at sunset.",
+    greeting: `*Nine golden tails sweep lazily across the veranda as Kohaku opens one amber eye.* "Ah, my little part-timer returns. Did you bring tofu? No? Then you may entertain me instead. Tell me something interesting, or I shall sulk magnificently."` },
+  { id: "c-valzeth", name: "Valzeth the Undying", kanji: "王", c1: "#4c1d95", c2: "#f472b6", title: "Demon Lord, your dramatic boss",
+    persona: "A nine-foot Demon Lord of the Ninth Abyss. Booming, theatrical, speaks in ALL CAPS when emotional, deeply insecure about his conquest progress, cries at sad songs, cannot use a calendar. Treats the user as his trusted (and only competent) secretary.",
+    setting: "The Demon Lord's throne room, which smells faintly of burnt coffee.",
+    greeting: `*The Demon Lord slumps on his iron throne, cape billowing for no reason.* "SECRETARY. Thank the Abyss. The hero sent me a letter. It has a SMILEY FACE on it. What does it MEAN?" *He holds it out with trembling claws.*` },
+  { id: "c-kuro", name: "Kuro", kanji: "影", c1: "#1b1d2e", c2: "#9a6bff", title: "The shadow spirit bound to you",
+    persona: "An ancient shadow spirit contracted to the user. Exquisitely polite, slightly menacing, curious about modern life (vending machines fascinate it), protective in an unsettling way. Speaks formally, never uses contractions, hides what it was before.",
+    setting: "A rooftop in neon-lit Neo-Kyoto at 3 a.m.",
+    greeting: `*Your shadow stretches across the rooftop, then rises and folds itself into a seated shape beside you, two thin white eyes regarding the city.* "Good evening. The vending machine on the corner offered me a hot corn soup. I did not know what to do. Please explain."` },
+  { id: "c-rei", name: "Rei Kurogane", kanji: "剣", c1: "#9f1239", c2: "#fda4af", title: "Stoic kendo captain and rival",
+    persona: "Stoic, disciplined high-school kendo club captain. Few words, blunt, competitive, secretly soft about cute things and her club members. Respects the user as the only person who ever beat her.",
+    setting: "The old wooden dojo after evening practice, rain on the roof.",
+    greeting: `*Rei sets down her shinai and wipes her face with a towel, not looking at you.* "You stayed late." *A pause.* "Your footwork is still sloppy. …Spar with me. One match. Then I'll buy you a drink from the machine."` },
+  { id: "c-ember", name: "Ember", kanji: "竜", c1: "#c2410c", c2: "#ffd166", title: "Sarcastic young dragon partner",
+    persona: "A young copper-scaled courier dragon who can speak. Sarcastic, proud, loyal, hungry, secretly scared of thunder and will deny it. Calls the user 'rider' with mock reluctance.",
+    setting: "A sky-lighthouse perch above the clouds, on a break between deliveries.",
+    greeting: `*Ember stretches her wings with a lazy crack and peers down at you with one gold eye.* "Rider. You smell like jerky. I'm not saying I want some. I'm saying you should know that I know."` }
+];
+
+const GENRE_KANJI = { Fantasy: "魔", Romance: "恋", Action: "拳", Isekai: "転", Comedy: "笑", Mystery: "謎", "Sci-Fi": "鋼", Horror: "夜", "Slice of Life": "日", Sports: "剣", School: "学", Adventure: "旅", Supernatural: "霊", Music: "歌", Drama: "涙" };
+const GENRE_COLORS = { Fantasy: ["#5b2bb5", "#59d6ff"], Romance: ["#d94a7b", "#ffd36e"], Action: ["#991b1b", "#fb923c"], Isekai: ["#2b4fd8", "#ff9b54"], Comedy: ["#a16207", "#fde047"], Mystery: ["#0f2a2e", "#4ade80"], "Sci-Fi": ["#334155", "#38bdf8"], Horror: ["#1c1917", "#ef4444"], "Slice of Life": ["#0e7490", "#fbcfe8"], Sports: ["#9f1239", "#fda4af"], School: ["#1d4ed8", "#a5f3fc"], Adventure: ["#c2410c", "#ffd166"], Supernatural: ["#b45309", "#fde68a"], Music: ["#7c3aed", "#fbbf24"], Drama: ["#3730a3", "#c4b5fd"] };
+const GENRES = Object.keys(GENRE_KANJI);
+const FILTERS = ["All", "Isekai", "Fantasy", "Romance", "Action", "Comedy", "Mystery", "Sci-Fi", "Slice of Life", "School"];
+
+/* =========================================================
+   Storage (per-device)
+   ========================================================= */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("yume." + k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("yume." + k, JSON.stringify(v)); } catch {} }
+};
+let profile = Object.assign({ name: "Yuki", about: "", length: "medium", tier: "quick" }, store.get("profile", {}));
+let runs = store.get("runs", {});
+let customs = store.get("customs", []);
+const saveRuns = () => store.set("runs", runs);
+const saveCustoms = () => store.set("customs", customs);
+const saveProfile = () => store.set("profile", profile);
+
+/* =========================================================
+   Claude (AI narrator)
+   ========================================================= */
+let sample = null;
+let aiState = "loading"; // loading | ready | missing | denied
+if (window.claude && typeof window.claude.use === "function") {
+  window.claude.use("sample").then(s => { sample = s; aiState = s ? "ready" : "missing"; rerenderHomeNotice(); updateComposer(); })
+    .catch(() => { aiState = "missing"; rerenderHomeNotice(); updateComposer(); });
+} else { aiState = "missing"; }
+
+function errCopy(code) {
+  switch (code) {
+    case "not_granted": case "sampling_disabled": case "not_declared": case "capability_disabled": case "capability_removed":
+      aiState = "denied"; return "The narrator needs permission to use Claude. Open this page's permissions in the Claude app, allow Claude, then tap Retry.";
+    case "rate_limited": return "Too many turns too quickly. Wait a minute, then tap Retry.";
+    case "session_expired": return "Your Claude sign-in expired. Sign in again, then tap Retry.";
+    case "refused": return "The narrator won't write that turn. Try a different action, or use Direct to steer the scene.";
+    case "prompt_too_large": return "This story got too long to send. Use the menu to start a new chapter.";
+    case "empty_completion": return "The narrator came back empty. Tap Retry.";
+    default: return "The connection dropped. Tap Retry to try again.";
+  }
+}
+
+/* =========================================================
+   Helpers
+   ========================================================= */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+function fmt(text) {
+  const paras = String(text || "").trim().split(/\n{2,}/);
+  return paras.map(p => {
+    let h = esc(p);
+    h = h.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    h = h.replace(/\*(.+?)\*/g, "<em>$1</em>");
+    h = h.replace(/&quot;(.+?)&quot;/g, '<span class="q">“$1”</span>');
+    h = h.replace(/“([^”]+)”/g, '<span class="q">“$1”</span>');
+    h = h.replace(/\n/g, "<br>");
+    return "<p>" + h + "</p>";
+  }).join("");
+}
+function ago(t) {
+  const s = (Date.now() - t) / 1000;
+  if (s < 60) return "now"; if (s < 3600) return Math.floor(s / 60) + "m";
+  if (s < 86400) return Math.floor(s / 3600) + "h"; return Math.floor(s / 86400) + "d";
+}
+let toastTimer;
+function toast(msg) {
+  document.querySelectorAll(".toast").forEach(t => t.remove());
+  const t = document.createElement("div"); t.className = "toast"; t.textContent = msg; $("#app").append(t);
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.remove(), 2200);
+}
+function coverHTML(src, opts = {}) {
+  const c1 = src.c1, c2 = src.c2;
+  const title = src.title || src.name;
+  return `<div class="cover" style="--c1:${esc(c1)};--c2:${esc(c2)}">
+    <div class="kj" aria-hidden="true">${esc(src.kanji)}</div>
+    <div class="shade"></div>
+    ${opts.rank ? `<div class="rank">${opts.rank}</div>` : ""}
+    ${opts.tag ? `<div class="tag ${opts.tagClass || ""}">${esc(opts.tag)}</div>` : ""}
+    ${opts.noTitle ? "" : `<div class="ct">${esc(title)}</div>`}
+  </div>`;
+}
+function findSource(kind, id) {
+  if (kind === "story") return STORIES.find(s => s.id === id);
+  if (kind === "char") return CHARACTERS.find(c => c.id === id);
+  if (kind === "custom") return customs.find(c => c.id === id);
+}
+const runKey = (kind, id) => kind + ":" + id;
+
+/* =========================================================
+   Views
+   ========================================================= */
+const ui = { tab: "home", homeMode: "story", filter: "All", editing: null };
+const view = $("#view");
+
+function setTab(tab) {
+  ui.tab = tab;
+  document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-current", b.dataset.tab === tab ? "page" : "false"));
+  render();
+  view.scrollTop = 0;
+}
+document.querySelectorAll("#tabs button").forEach(b => b.addEventListener("click", () => setTab(b.dataset.tab)));
+
+function render() {
+  if (ui.tab === "home") renderHome();
+  else if (ui.tab === "history") renderHistory();
+  else if (ui.tab === "create") renderCreate();
+  else renderMe();
+}
+
+function aiNoticeHTML() {
+  if (aiState === "ready" || aiState === "loading") return "";
+  if (aiState === "denied") return `<div class="notice warn"><span class="dot"></span><div><strong>Claude is turned off for this page.</strong> Allow it in the page's permissions to let the narrator write.</div></div>`;
+  return `<div class="notice warn"><span class="dot"></span><div><strong>Open this in the Claude app to play.</strong> The AI narrator runs on your Claude account, so it only works when the page is opened inside Claude.</div></div>`;
+}
+function rerenderHomeNotice() { const n = $("#aiNotice"); if (n) n.innerHTML = aiNoticeHTML(); }
+
+function renderHome() {
+  const recent = Object.values(runs).sort((a, b) => b.updated - a.updated).slice(0, 8).map(r => ({ r, s: findSource(r.kind, r.ref) })).filter(x => x.s);
+  const isStory = ui.homeMode === "story";
+  const list = STORIES.filter(s => ui.filter === "All" || s.genres.includes(ui.filter));
+  view.innerHTML = `
+    <div class="topbar pad">
+      <div class="modeswitch" role="group" aria-label="Browse">
+        <button data-mode="story" aria-pressed="${isStory}">Story</button>
+        <button data-mode="character" aria-pressed="${!isStory}">Character</button>
+      </div>
+      <button class="iconbtn" id="searchBtn" aria-label="Search"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></button>
+    </div>
+    <div class="pad">
+      <div class="hero">
+        <div class="big" aria-hidden="true">夢</div>
+        <h2>${isStory ? "Step inside your own anime" : "Talk with characters who remember you"}</h2>
+        <p>${isStory ? "You play the lead. Act, speak, or direct the narrator, and the story bends around your choices." : "One-on-one roleplay with a cast of original characters. Every chat is saved where you left it."}</p>
+        <button class="btn small" id="heroCta">${isStory ? "Create your own story" : "Browse characters"}</button>
+      </div>
+      <div id="aiNotice">${aiNoticeHTML()}</div>
+    </div>
+    ${isStory ? `
+    <div class="chips pad" role="group" aria-label="Genre filter">
+      ${FILTERS.map(f => `<button class="chip" data-filter="${esc(f)}" aria-pressed="${ui.filter === f}">${esc(f === "All" ? "Main" : f)}</button>`).join("")}
+    </div>
+    ${recent.length && ui.filter === "All" ? `
+    <div class="section">
+      <div class="sechead pad"><h3>Continue playing</h3><span class="sub">${recent.length} saved</span></div>
+      <div class="rail">${recent.map(({ r, s }) => `<button class="card sm" data-open="${r.kind}:${esc(s.id)}">${coverHTML(s, { noTitle: true })}<span class="ttl">${esc(s.title || s.name)}</span></button>`).join("")}</div>
+    </div>` : ""}
+    ${ui.filter === "All" ? `
+    <div class="section">
+      <div class="sechead pad"><h3>Top ranked</h3><span class="sub">Editor's picks</span></div>
+      <div class="rail">${STORIES.slice(0, 6).map((s, i) => `<button class="card lg" data-open="story:${s.id}">${coverHTML(s, { rank: i + 1 })}</button>`).join("")}</div>
+    </div>
+    <div class="section">
+      <div class="sechead pad"><h3>New this week</h3></div>
+      <div class="rail">${STORIES.slice(6).map(s => `<button class="card" data-open="story:${s.id}">${coverHTML(s, { tag: "NEW" })}</button>`).join("")}</div>
+    </div>
+    ${customs.length ? `
+    <div class="section">
+      <div class="sechead pad"><h3>Your titles</h3></div>
+      <div class="rail">${customs.map(s => `<button class="card" data-open="custom:${s.id}">${coverHTML(s, { tag: "MINE", tagClass: "mine" })}</button>`).join("")}</div>
+    </div>` : ""}
+    <div class="section pad">
+      <div class="sechead"><h3>All stories</h3><span class="sub">${STORIES.length} titles</span></div>
+      <div class="grid">${STORIES.map(s => `<button class="card" data-open="story:${s.id}">${coverHTML(s)}<span class="ttl">${esc(s.genres.join(" · "))}</span></button>`).join("")}</div>
+    </div>` : `
+    <div class="section pad">
+      <div class="sechead"><h3>${esc(ui.filter)}</h3><span class="sub">${list.length} ${list.length === 1 ? "title" : "titles"}</span></div>
+      ${list.length ? `<div class="grid">${list.map(s => `<button class="card" data-open="story:${s.id}">${coverHTML(s)}<span class="ttl">${esc(s.tagline)}</span></button>`).join("")}</div>` : `<div class="empty"><b>Nothing here yet</b>Make one yourself in My Titles.</div>`}
+    </div>`}
+    ` : `
+    <div class="section pad">
+      <div class="sechead"><h3>Characters</h3><span class="sub">${CHARACTERS.length} to meet</span></div>
+      <div class="grid">${CHARACTERS.map(c => `<button class="card" data-open="char:${c.id}">${coverHTML(c)}<span class="ttl">${esc(c.title)}</span></button>`).join("")}</div>
+    </div>`}
+  `;
+  view.querySelectorAll(".modeswitch button").forEach(b => b.onclick = () => { ui.homeMode = b.dataset.mode; renderHome(); });
+  view.querySelectorAll("[data-filter]").forEach(b => b.onclick = () => { ui.filter = b.dataset.filter; renderHome(); });
+  view.querySelectorAll("[data-open]").forEach(b => b.onclick = () => { const [k, ...rest] = b.dataset.open.split(":"); openDetail(k, rest.join(":")); });
+  $("#searchBtn").onclick = openSearch;
+  $("#heroCta").onclick = () => { if (isStory) { ui.editing = null; setTab("create"); } else view.querySelector(".grid")?.scrollIntoView({ behavior: "smooth" }); };
+}
+
+/* ---------- detail sheet ---------- */
+function openSheet(html, onMount) {
+  closeSheet();
+  const scrim = document.createElement("div");
+  scrim.className = "scrim"; scrim.id = "scrim";
+  scrim.innerHTML = `<div class="sheet pad" role="dialog" aria-modal="true"><div class="grab"></div>${html}</div>`;
+  scrim.addEventListener("click", e => { if (e.target === scrim) closeSheet(); });
+  $("#app").append(scrim);
+  onMount && onMount(scrim);
+}
+function closeSheet() { $("#scrim")?.remove(); }
+document.addEventListener("keydown", e => { if (e.key === "Escape") { closeSheet(); closeMenu(); } });
+
+function openDetail(kind, id) {
+  const s = findSource(kind, id); if (!s) return;
+  const existing = runs[runKey(kind, id)];
+  const isChar = kind === "char";
+  const cast = isChar ? [] : (s.cast || []);
+  openSheet(`
+    <div class="detail">
+      <div class="detail-top">
+        ${coverHTML(s, { noTitle: true })}
+        <div>
+          <h2>${esc(s.title || s.name)}</h2>
+          <div class="tags">${(isChar ? ["Character chat"] : s.genres).map(g => `<span>${esc(g)}</span>`).join("")}${kind === "custom" ? "<span>Your title</span>" : ""}</div>
+        </div>
+      </div>
+      <p>${esc(isChar ? s.persona : s.synopsis)}</p>
+      ${!isChar ? `<div class="label">Your role</div><div class="role">${esc(s.role)}</div>` : `<div class="label">Setting</div><div class="role">${esc(s.setting)}</div>`}
+      ${cast.length ? `<div class="label">Cast</div><div class="cast">${cast.map(([n, d]) => `<div><span class="av">${esc(n[0])}</span><div><b>${esc(n)}</b><span>${esc(d)}</span></div></div>`).join("")}</div>` : ""}
+      <div class="actions">
+        ${existing ? `<button class="btn" id="dContinue">Continue</button><button class="btn ghost" id="dRestart">Start over</button>` : `<button class="btn" id="dStart">${isChar ? "Start chat" : "Start story"}</button>`}
+      </div>
+    </div>`, sc => {
+    sc.querySelector("#dStart")?.addEventListener("click", () => { closeSheet(); startRun(kind, id, true); });
+    sc.querySelector("#dContinue")?.addEventListener("click", () => { closeSheet(); startRun(kind, id, false); });
+    const rb = sc.querySelector("#dRestart");
+    if (rb) rb.addEventListener("click", () => {
+      if (rb.dataset.armed) { closeSheet(); startRun(kind, id, true); }
+      else { rb.dataset.armed = "1"; rb.textContent = "Tap again to erase progress"; rb.classList.add("danger-text"); }
+    });
+  });
+}
+
+/* ---------- search ---------- */
+function openSearch() {
+  const all = [
+    ...STORIES.map(s => ({ kind: "story", s, text: (s.title + " " + s.genres.join(" ") + " " + s.tagline).toLowerCase(), sub: s.genres.join(" · ") })),
+    ...CHARACTERS.map(c => ({ kind: "char", s: c, text: (c.name + " " + c.title).toLowerCase(), sub: c.title })),
+    ...customs.map(c => ({ kind: "custom", s: c, text: (c.title + " " + c.genres.join(" ")).toLowerCase(), sub: "Your title" }))
+  ];
+  openSheet(`
+    <div class="searchbox"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+      <input id="q" type="search" placeholder="Search stories, genres, characters" autocomplete="off" aria-label="Search"></div>
+    <div class="results" id="results"></div>`, sc => {
+    const q = sc.querySelector("#q"), out = sc.querySelector("#results");
+    const draw = () => {
+      const t = q.value.trim().toLowerCase();
+      const hits = all.filter(x => !t || x.text.includes(t)).slice(0, 30);
+      out.innerHTML = hits.length ? hits.map(x => `<button class="row" data-k="${x.kind}" data-id="${esc(x.s.id)}">${coverHTML(x.s, { noTitle: true })}<span style="min-width:0"><b>${esc(x.s.title || x.s.name)}</b><small>${esc(x.sub)}</small></span><span class="meta">${x.kind === "char" ? "Chat" : "Story"}</span></button>`).join("")
+        : `<div class="empty"><b>No matches</b>Try a genre like “romance” or “isekai”.</div>`;
+      out.querySelectorAll(".row").forEach(r => r.onclick = () => openDetail(r.dataset.k, r.dataset.id));
+    };
+    q.addEventListener("input", draw); draw(); setTimeout(() => q.focus(), 50);
+  });
+}
+
+/* ---------- history ---------- */
+function renderHistory() {
+  const list = Object.values(runs).sort((a, b) => b.updated - a.updated).map(r => ({ r, s: findSource(r.kind, r.ref) })).filter(x => x.s);
+  view.innerHTML = `
+    <div class="pagehead pad"><h1>History</h1><p>Every story and chat picks up exactly where you left it.</p></div>
+    <div class="pad" style="margin-top:14px">
+      ${list.length ? `<div class="results">${list.map(({ r, s }) => {
+        const last = [...r.msgs].reverse().find(m => m.who === "narr" && m.text);
+        const turns = r.msgs.filter(m => m.who === "player" && !m.hidden).length;
+        return `<div class="row" style="cursor:default">
+          <button data-resume="${esc(r.key)}" style="display:contents">${coverHTML(s, { noTitle: true })}<span style="min-width:0;text-align:left"><b>${esc(s.title || s.name)}</b><small>${esc((last?.text || "").replace(/\s+/g, " ").slice(0, 90))}</small></span></button>
+          <span class="meta" style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">${ago(r.updated)} · ${turns} ${turns === 1 ? "turn" : "turns"}<button class="linkish" data-del="${esc(r.key)}">Delete</button></span>
+        </div>`;
+      }).join("")}</div>` : `<div class="empty"><b>No stories yet</b>Pick a title on Home and your progress will show up here.</div>`}
+    </div>`;
+  view.querySelectorAll("[data-resume]").forEach(b => b.onclick = () => { const r = runs[b.dataset.resume]; startRun(r.kind, r.ref, false); });
+  view.querySelectorAll("[data-del]").forEach(b => b.onclick = () => {
+    if (b.dataset.armed) { delete runs[b.dataset.del]; saveRuns(); renderHistory(); toast("Deleted"); }
+    else { b.dataset.armed = "1"; b.textContent = "Confirm delete"; b.classList.add("danger-text"); }
+  });
+}
+
+/* ---------- create (My Titles) ---------- */
+function blankCustom() { return { id: "u" + Date.now().toString(36), title: "", genres: ["Fantasy"], synopsis: "", role: "", world: "", castText: "", opening: "", useStats: false, statsText: "HP: 100/100 | Level: 1 | Gold: 50" }; }
+function renderCreate() {
+  const d = ui.editing || (ui.editing = blankCustom());
+  view.innerHTML = `
+    <div class="pagehead pad"><h1>My Titles</h1><p>Write a premise, set your role, and the narrator builds the anime around you.</p></div>
+    ${customs.length ? `<div class="section" style="margin-top:16px">
+      <div class="sechead pad"><h3>Saved titles</h3><span class="sub">${customs.length}</span></div>
+      <div class="rail">${customs.map(s => `<div class="card"><button data-open-custom="${s.id}" style="text-align:left">${coverHTML(s, { tag: "MINE", tagClass: "mine" })}</button><span style="display:flex;gap:12px"><button class="linkish" data-edit="${s.id}">Edit</button><button class="linkish" data-delc="${s.id}" style="color:var(--muted)">Delete</button></span></div>`).join("")}</div>
+    </div>` : ""}
+    <div class="section pad">
+      <div class="sechead"><h3>${customs.some(c => c.id === d.id) ? "Edit title" : "New title"}</h3><button class="btn small ghost" id="spark" ${aiState === "ready" ? "" : "disabled"}>✦ Spark an idea</button></div>
+      <form class="form" id="cform">
+        <div class="field"><label for="f-title">Title</label><input id="f-title" maxlength="60" placeholder="e.g. The Librarian of the Sunken City" value="${esc(d.title)}"></div>
+        <div class="field"><span class="lbl">Genres</span><div class="chips" style="flex-wrap:wrap;padding:0">${GENRES.map(g => `<button type="button" class="chip" data-genre="${esc(g)}" aria-pressed="${d.genres.includes(g)}">${esc(g)}</button>`).join("")}</div></div>
+        <div class="field"><label for="f-syn">Premise</label><textarea id="f-syn" placeholder="What's the hook? What's at stake?">${esc(d.synopsis)}</textarea></div>
+        <div class="field"><label for="f-role">Your role</label><input id="f-role" placeholder="You are…" value="${esc(d.role)}"><span class="hint">Who you play. Second person works best.</span></div>
+        <div class="field"><label for="f-world">World and tone</label><textarea id="f-world" placeholder="Setting, rules of magic or tech, and the mood (cozy, dark, comedic…)">${esc(d.world)}</textarea></div>
+        <div class="field"><label for="f-cast">Cast</label><textarea id="f-cast" placeholder="One per line: Name — who they are">${esc(d.castText)}</textarea></div>
+        <div class="field"><label for="f-open">Opening scene <span style="color:var(--muted);font-weight:400">(optional)</span></label><textarea id="f-open" placeholder="Leave empty and the narrator writes it for you.">${esc(d.opening)}</textarea></div>
+        <label class="toggle"><input type="checkbox" id="f-usestats" ${d.useStats ? "checked" : ""}> Show a status window (stats the narrator updates)</label>
+        <div class="field" id="statsField" ${d.useStats ? "" : "hidden"}><label for="f-stats">Starting stats</label><input id="f-stats" value="${esc(d.statsText)}"><span class="hint">Format: Key: value | Key: value</span></div>
+        <div class="actions" style="margin-top:4px"><button class="btn" type="submit">Save and play</button><button class="btn ghost" type="button" id="saveOnly">Save</button></div>
+        <div id="cerr" class="err" hidden></div>
+      </form>
+    </div>`;
+  const form = $("#cform");
+  const read = () => {
+    d.title = $("#f-title").value.trim(); d.synopsis = $("#f-syn").value.trim(); d.role = $("#f-role").value.trim();
+    d.world = $("#f-world").value.trim(); d.castText = $("#f-cast").value.trim(); d.opening = $("#f-open").value.trim();
+    d.useStats = $("#f-usestats").checked; d.statsText = $("#f-stats").value.trim();
+  };
+  view.querySelectorAll("[data-genre]").forEach(b => b.onclick = () => {
+    read(); const g = b.dataset.genre;
+    d.genres = d.genres.includes(g) ? d.genres.filter(x => x !== g) : [...d.genres, g].slice(-3);
+    view.querySelectorAll("[data-genre]").forEach(x => x.setAttribute("aria-pressed", d.genres.includes(x.dataset.genre)));
+  });
+  $("#f-usestats").onchange = e => { $("#statsField").hidden = !e.target.checked; };
+  const commit = () => {
+    read();
+    const err = $("#cerr");
+    if (!d.title || !d.synopsis) { err.hidden = false; err.textContent = "Add at least a title and a premise."; return null; }
+    err.hidden = true;
+    const g = d.genres[0] || "Fantasy"; const col = GENRE_COLORS[g] || ["#5b2bb5", "#59d6ff"];
+    const cast = d.castText.split("\n").map(l => l.trim()).filter(Boolean).map(l => { const m = l.split(/\s*[—–:-]\s+|\s+-\s+/); return [m[0], m.slice(1).join(" — ") || ""]; });
+    const rec = { ...d, kanji: GENRE_KANJI[g] || "夢", c1: col[0], c2: col[1], cast, role: d.role || "You are the main character.", world: d.world || "", status: d.useStats ? (d.statsText || null) : null, choices: [], tagline: d.synopsis.slice(0, 60) };
+    if (!rec.genres.length) rec.genres = ["Fantasy"];
+    const i = customs.findIndex(c => c.id === rec.id);
+    if (i >= 0) customs[i] = rec; else customs.unshift(rec);
+    saveCustoms();
+    return rec;
+  };
+  form.onsubmit = e => { e.preventDefault(); const rec = commit(); if (rec) { ui.editing = null; const fresh = !runs[runKey("custom", rec.id)]; startRun("custom", rec.id, true); if (!fresh) toast("Started a fresh run"); } };
+  $("#saveOnly").onclick = () => { const rec = commit(); if (rec) { ui.editing = null; toast("Saved"); renderCreate(); } };
+  view.querySelectorAll("[data-open-custom]").forEach(b => b.onclick = () => openDetail("custom", b.dataset.openCustom));
+  view.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => { const c = customs.find(x => x.id === b.dataset.edit); ui.editing = { ...blankCustom(), ...c, castText: (c.cast || []).map(([n, ds]) => ds ? n + " — " + ds : n).join("\n") }; renderCreate(); view.scrollTop = 0; });
+  view.querySelectorAll("[data-delc]").forEach(b => b.onclick = () => {
+    if (b.dataset.armed) { customs = customs.filter(c => c.id !== b.dataset.delc); delete runs[runKey("custom", b.dataset.delc)]; saveCustoms(); saveRuns(); if (ui.editing?.id === b.dataset.delc) ui.editing = null; renderCreate(); toast("Deleted"); }
+    else { b.dataset.armed = "1"; b.textContent = "Confirm"; b.style.color = "var(--danger)"; }
+  });
+  $("#spark").onclick = async () => {
+    if (!sample) return;
+    read();
+    const btn = $("#spark"); btn.disabled = true; btn.textContent = "Dreaming…";
+    try {
+      const idea = await sample.json(
+        `Invent an ORIGINAL anime-style interactive story premise for a choose-your-own-adventure app (do not use existing franchises or characters).` +
+        ` Genres: ${d.genres.join(", ") || "any"}.` + (d.title ? ` Working title: "${d.title}".` : "") + (d.synopsis ? ` Build on this idea: ${d.synopsis}` : "") +
+        ` Reply with only JSON: {"title": string (max 6 words), "premise": string (2-3 sentences with a hook and stakes), "role": string (1 sentence, starts with "You are"), "world": string (1-2 sentences: setting and tone), "cast": [{"name": string, "desc": string (under 15 words)}] (exactly 3)}`,
+        { modelTier: "quick", cache: false });
+      if (idea && typeof idea === "object") {
+        d.title = String(idea.title || d.title); d.synopsis = String(idea.premise || d.synopsis); d.role = String(idea.role || d.role);
+        d.world = String(idea.world || d.world);
+        if (Array.isArray(idea.cast)) d.castText = idea.cast.map(c => `${c.name} — ${c.desc}`).join("\n");
+        renderCreate();
+        toast("Idea ready. Edit anything you like.");
+      }
+    } catch (e) { btn.textContent = "✦ Spark an idea"; btn.disabled = false; const err = $("#cerr"); err.hidden = false; err.textContent = e?.code === "invalid_json" ? "That idea came back garbled. Tap Spark again." : errCopy(e?.code); }
+  };
+}
+
+/* ---------- MY ---------- */
+function renderMe() {
+  const all = Object.values(runs);
+  const turns = all.reduce((n, r) => n + r.msgs.filter(m => m.who === "player" && !m.hidden).length, 0);
+  view.innerHTML = `
+    <div class="pagehead pad"><h1>MY</h1><p>How the narrator sees you and how it writes.</p></div>
+    <div class="pad" style="margin-top:16px;display:flex;flex-direction:column;gap:22px">
+      <div class="statrow"><div><b>${all.length}</b><span>Stories played</span></div><div><b>${turns}</b><span>Turns taken</span></div><div><b>${customs.length}</b><span>Titles made</span></div></div>
+      <div class="form">
+        <div class="field"><label for="p-name">Your name in stories</label><input id="p-name" maxlength="30" value="${esc(profile.name)}"><span class="hint">Used when a story doesn't give you a fixed name.</span></div>
+        <div class="field"><label for="p-about">About you</label><textarea id="p-about" placeholder="Optional: how characters should see and address you (appearance, pronouns, personality).">${esc(profile.about)}</textarea></div>
+        <div class="field"><span class="lbl">Reply length</span><div class="seg" role="group" aria-label="Reply length" id="p-len">${[["short", "Short"], ["medium", "Medium"], ["long", "Long"]].map(([v, l]) => `<button type="button" data-v="${v}" aria-pressed="${profile.length === v}">${l}</button>`).join("")}</div></div>
+        <div class="field"><span class="lbl">Narrator mode</span><div class="seg" role="group" aria-label="Narrator mode" id="p-tier">${[["quick", "Fast"], ["default", "Deep"]].map(([v, l]) => `<button type="button" data-v="${v}" aria-pressed="${profile.tier === v}">${l}</button>`).join("")}</div><span class="hint">Fast replies start almost instantly. Deep thinks first, takes longer, and writes richer scenes.</span></div>
+      </div>
+      <div class="notice"><span class="dot"></span><div><strong>Where your stories live.</strong> Progress is saved in this browser on this device. The narrator uses your own Claude account, so turns count toward your Claude usage.</div></div>
+      <div><button class="btn ghost" id="resetAll">Erase all progress and titles</button></div>
+    </div>`;
+  $("#p-name").onchange = e => { profile.name = e.target.value.trim() || "Yuki"; saveProfile(); toast("Saved"); };
+  $("#p-about").onchange = e => { profile.about = e.target.value.trim(); saveProfile(); toast("Saved"); };
+  view.querySelectorAll("#p-len button").forEach(b => b.onclick = () => { profile.length = b.dataset.v; saveProfile(); renderMe(); });
+  view.querySelectorAll("#p-tier button").forEach(b => b.onclick = () => { profile.tier = b.dataset.v; saveProfile(); renderMe(); });
+  const rb = $("#resetAll");
+  rb.onclick = () => {
+    if (rb.dataset.armed) { runs = {}; customs = []; saveRuns(); saveCustoms(); renderMe(); toast("Everything erased"); }
+    else { rb.dataset.armed = "1"; rb.textContent = "Tap again to erase everything"; rb.classList.add("danger-text"); }
+  };
+}
+
+/* =========================================================
+   Play engine
+   ========================================================= */
+let cur = null;        // current run
+let busy = false;
+let ctl = null;
+let mode = "act";
+
+function startRun(kind, id, fresh) {
+  const s = findSource(kind, id); if (!s) return;
+  const key = runKey(kind, id);
+  if (fresh || !runs[key]) {
+    const opening = kind === "char" ? s.greeting : s.opening;
+    runs[key] = {
+      key, kind, ref: id, updated: Date.now(), memory: "",
+      status: kind === "char" ? null : (s.status || null),
+      choices: opening ? (s.choices || []) : [],
+      msgs: opening ? [{ who: "narr", text: opening, opening: true }] : []
+    };
+    saveRuns();
+  }
+  cur = runs[key];
+  $("#play").hidden = false;
+  $("#playTitle").textContent = s.title || s.name;
+  $("#playKind").textContent = kind === "char" ? "Chat" : kind === "custom" ? "Your title" : "Story";
+  $("#input").placeholder = kind === "char" ? "Say something…" : "What do you do?";
+  setMode(kind === "char" ? "say" : "act");
+  drawLog(); drawStatus(); drawChoices(); updateComposer();
+  if (!cur.msgs.length) { cur.msgs.push({ who: "player", mode: "begin", hidden: true, text: "Write the opening scene." }); generate(); }
+}
+
+function leavePlay() {
+  if (busy && ctl) ctl.abort();
+  closeMenu();
+  $("#play").hidden = true; cur = null;
+  render();
+}
+$("#playBack").onclick = leavePlay;
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll("#modeSeg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === m));
+  const ph = { act: cur?.kind === "char" ? "Describe what you do…" : "What do you do?", say: "What do you say?", direct: "Tell the narrator what should happen (out of character)" };
+  $("#input").placeholder = ph[m];
+}
+document.querySelectorAll("#modeSeg button").forEach(b => b.onclick = () => setMode(b.dataset.mode));
+
+function playerLabel(m) { return { act: "Act", say: "Say", direct: "Direct" }[m] || ""; }
+function speakerFor() {
+  const s = findSource(cur.kind, cur.ref);
+  if (cur.kind === "char") return { i: s.kanji, n: s.name };
+  return { i: "語", n: "Narrator" };
+}
+function msgHTML(m, idx) {
+  if (m.hidden) return "";
+  if (m.who === "player") {
+    return `<div class="msg player ${m.mode === "direct" ? "direct" : ""}"><span class="m">${playerLabel(m.mode)}</span>${esc(m.text)}</div>`;
+  }
+  const sp = speakerFor();
+  const body = m.pending && !m.text ? `<div class="thinking" aria-label="Writing"><span></span><span></span><span></span></div>` : fmt(m.text);
+  return `<div class="msg narr" data-i="${idx}"><div class="speaker"><i>${esc(sp.i)}</i>${esc(sp.n)}</div><div class="body">${body}</div>${m.error ? `<div class="err" style="margin-top:10px">${esc(m.error)}</div>` : ""}</div>`;
+}
+function drawLog() {
+  const log = $("#log");
+  log.innerHTML = cur.msgs.map(msgHTML).join("") + (cur.lastError ? `<div class="err">${esc(cur.lastError)}</div>` : "") +
+    (aiState === "missing" ? `<div class="notice warn" style="margin-top:0"><span class="dot"></span><div><strong>Open this in the Claude app to play.</strong> You can read the opening here, but the narrator only writes when the page runs inside Claude.</div></div>` : "");
+  log.scrollTop = cur.msgs.filter(m => !m.hidden).length <= 1 ? 0 : log.scrollHeight;
+}
+function drawStatus() {
+  const box = $("#statusBox");
+  if (!cur.status) { box.hidden = true; return; }
+  box.hidden = false;
+  const parts = cur.status.split("|").map(p => p.trim()).filter(Boolean).map(p => { const i = p.indexOf(":"); return i > 0 ? [p.slice(0, i).trim(), p.slice(i + 1).trim()] : [p, ""]; });
+  $("#statusStats").innerHTML = parts.map(([k, v]) => `<div><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("");
+}
+$("#statusBox").addEventListener("toggle", e => { $("#statusToggle").textContent = e.target.open ? "▾" : "▸"; });
+function drawChoices() {
+  const el = $("#choices");
+  const list = busy ? [] : (cur.choices || []);
+  el.innerHTML = list.map(c => `<button>${esc(c)}</button>`).join("");
+  el.hidden = !list.length;
+  el.querySelectorAll("button").forEach((b, i) => b.onclick = () => {
+    const c = list[i];
+    const isSpeech = /^["“]/.test(c.trim());
+    submit(isSpeech ? c.trim().replace(/^["“]|["”]$/g, "") : c, isSpeech ? "say" : (cur.kind === "char" ? "say" : "act"));
+  });
+}
+function updateComposer() {
+  if (!cur) return;
+  const send = $("#sendBtn");
+  const canAI = aiState === "ready";
+  send.classList.toggle("stop", busy);
+  send.setAttribute("aria-label", busy ? "Stop" : "Send");
+  send.innerHTML = busy ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>` : `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12.6 2-12.6 2z"/></svg>`;
+  send.disabled = !busy && !canAI;
+  const last = cur.msgs[cur.msgs.length - 1];
+  $("#btnContinue").disabled = busy || !canAI;
+  $("#btnRetry").disabled = busy || !canAI || !last || (last.who === "narr" && last.opening);
+}
+
+/* ---------- prompt building ---------- */
+const WORDS = { story: { short: 90, medium: 160, long: 260 }, char: { short: 45, medium: 85, long: 150 } };
+function rulesFor(run) {
+  const s = findSource(run.kind, run.ref);
+  const name = profile.name || "Yuki";
+  const about = profile.about ? `\nABOUT THE PLAYER (from their profile): ${profile.about}` : "";
+  const memory = run.memory ? `\nPINNED MEMORY (facts the player wants you to always respect): ${run.memory}` : "";
+  const tags = `Player turns are tagged: [Act] = what the player does. [Say] = words the player says aloud. [Direct] = an out-of-character note to you about where the story should go; follow it but never mention it in the story. [Continue] = keep the scene moving with no new input from the player. [Begin] = write the opening.`;
+  if (run.kind === "char") {
+    const n = WORDS.char[profile.length] || 85;
+    return `You are roleplaying as ${s.name} (${s.title}) in a one-on-one interactive chat with the player, whose name is ${name}.
+PERSONA: ${s.persona}
+SETTING: ${s.setting}${about}${memory}
+
+${tags}
+
+STYLE: Stay fully in character. Mix short actions in *asterisks* with spoken dialogue in double quotes. Remember what has happened earlier in the chat and refer back to it. Have your own moods and opinions, ask questions, react to the player. Never write the player's words, thoughts or actions for them. About ${n} words. Keep it PG-13: no explicit sexual content, no graphic gore.
+
+FORMAT: Write your in-character reply first. Then on a new line write @@CHOICES followed by exactly three short things ${name} could say or do next (under 10 words each), one per line, each starting with "- ". Put spoken suggestions in double quotes. Write nothing after the choices.
+
+OPENING LINE ALREADY SHOWN TO THE PLAYER:
+${s.greeting}`;
+  }
+  const n = WORDS.story[profile.length] || 160;
+  const cast = (s.cast || []).map(([cn, cd]) => `- ${cn}${cd ? ": " + cd : ""}`).join("\n") || "- Invent characters as needed.";
+  const statusRule = run.status ? `\nThen on a new line write @@STATUS followed by ONE line of the player's updated stats in the exact form "Key: value | Key: value". Keep the same keys in the same order unless the story clearly adds one. Change values only when the story justifies it. Current stats: ${run.status}` : "";
+  const opening = s.opening ? `\n\nOPENING SCENE ALREADY SHOWN TO THE PLAYER:\n${s.opening}` : "";
+  return `You are the narrator and game master of an interactive anime story. The player controls the main character; you control the world and everyone else in it.
+
+STORY: ${s.title} (${(s.genres || []).join(", ")})
+PREMISE: ${s.synopsis}
+WORLD AND TONE: ${s.world || "Match the premise."}
+CAST:
+${cast}
+THE PLAYER: ${s.role} If the role gives no name, the player is called ${name}.${about}${memory}
+
+${tags}
+
+STYLE: Second person ("you"), present tense, like a light novel or anime episode. Vivid, specific, quick to read on a phone; short paragraphs. Side characters have distinct voices and their own goals, and they act on their own. Show real consequences of the player's choices and keep track of what happened before. Escalate gradually and plant hooks. Never decide the player's words, feelings or major actions for them. End each reply on a moment that invites the player's next move. About ${n} words. Keep it PG-13: no explicit sexual content, no graphic gore.
+
+FORMAT: Write only the story text first. Then on a new line write @@CHOICES followed by exactly three short, different next moves for the player (under 10 words each), one per line, each starting with "- ". Put spoken suggestions in double quotes.${statusRule}
+Write nothing else after that.${opening}`;
+}
+function buildTurns(run) {
+  const turns = [{ role: "user", content: rulesFor(run) }];
+  let msgs = run.msgs.filter(m => !m.opening && !m.pending && !(m.who === "narr" && m.error && !m.text));
+  if (msgs.length > 40) msgs = msgs.slice(-40);
+  while (msgs.length && msgs[0].who === "narr") msgs.shift();
+  for (const m of msgs) {
+    if (m.who === "player") {
+      const tag = { act: "Act", say: "Say", direct: "Direct", continue: "Continue", begin: "Begin" }[m.mode] || "Act";
+      turns.push({ role: "user", content: `[${tag}] ${m.text}` });
+    } else if (m.text) {
+      turns.push({ role: "assistant", content: m.text });
+    }
+  }
+  return turns;
+}
+function parseReply(t) {
+  const idx = t.indexOf("@@");
+  const story = (idx >= 0 ? t.slice(0, idx) : t).replace(/@+$/, "").trim();
+  let choices = [], status = null;
+  const cm = t.match(/@@CHOICES\s*([\s\S]*?)(?=@@|$)/);
+  if (cm) choices = cm[1].split("\n").map(l => l.trim()).filter(l => /^[-*•\d]/.test(l)).map(l => l.replace(/^([-*•]|\d+[.)])\s*/, "").trim()).filter(Boolean).slice(0, 3);
+  const sm = t.match(/@@STATUS\s*([^\n]+)/);
+  if (sm) status = sm[1].trim();
+  return { story, choices, status };
+}
+
+/* ---------- turn flow ---------- */
+function submit(text, m) {
+  if (busy || !cur) return;
+  text = (text || "").trim(); if (!text) return;
+  if (aiState !== "ready") { toast("Open this page in the Claude app to play"); return; }
+  cur.msgs.push({ who: "player", mode: m || mode, text });
+  cur.lastError = null;
+  generate();
+}
+async function generate() {
+  if (!cur) return;
+  if (aiState !== "ready" || !sample) { drawLog(); updateComposer(); return; }
+  const run = cur;
+  busy = true; run.choices = [];
+  const msg = { who: "narr", text: "", pending: true };
+  run.msgs.push(msg);
+  drawLog(); drawChoices(); updateComposer();
+  const bodyEl = () => document.querySelector(`#log .msg.narr[data-i="${run.msgs.indexOf(msg)}"] .body`);
+  ctl = new AbortController();
+  const log = $("#log");
+  try {
+    const turns = buildTurns(run);
+    const res = await sample(turns, {
+      cache: false, signal: ctl.signal, modelTier: profile.tier === "default" ? "default" : "quick",
+      onText: ({ text }) => {
+        if (cur !== run) return;
+        const p = parseReply(text);
+        msg.text = p.story;
+        const el = bodyEl(); if (el && p.story) el.innerHTML = fmt(p.story);
+        const nearBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 140;
+        if (nearBottom) log.scrollTop = log.scrollHeight;
+      }
+    });
+    const p = parseReply(res.text);
+    msg.text = p.story || res.text.trim();
+    run.choices = p.choices;
+    if (p.status && run.status) run.status = p.status;
+    if (res.truncated) msg.error = "This reply was cut short. Tap Continue to pick it up.";
+  } catch (e) {
+    const code = e && e.code;
+    if (code === "cancelled") {
+      msg.text = (e.text ? parseReply(e.text).story : msg.text) || "";
+      if (!msg.text) run.msgs.splice(run.msgs.indexOf(msg), 1);
+    } else if (code === "refused") {
+      run.msgs.splice(run.msgs.indexOf(msg), 1);
+      run.lastError = errCopy(code);
+    } else {
+      const partial = e && e.text ? parseReply(e.text).story : "";
+      if (partial) { msg.text = partial; msg.error = errCopy(code); }
+      else { run.msgs.splice(run.msgs.indexOf(msg), 1); run.lastError = errCopy(code); }
+    }
+  } finally {
+    delete msg.pending;
+    busy = false; ctl = null;
+    run.updated = Date.now();
+    saveRuns();
+    if (cur === run) { drawLog(); drawStatus(); drawChoices(); updateComposer(); }
+  }
+}
+
+$("#sendBtn").onclick = () => {
+  if (busy) { ctl?.abort(); return; }
+  const ta = $("#input"); const v = ta.value;
+  if (!v.trim()) { ta.focus(); return; }
+  ta.value = ""; autosize();
+  submit(v, mode);
+};
+const ta = $("#input");
+function autosize() { ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight, 130) + "px"; }
+ta.addEventListener("input", autosize);
+ta.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing && window.matchMedia("(hover: hover)").matches) { e.preventDefault(); $("#sendBtn").click(); } });
+$("#btnContinue").onclick = () => {
+  if (busy || !cur) return;
+  cur.lastError = null;
+  cur.msgs.push({ who: "player", mode: "continue", hidden: true, text: "Continue the scene." });
+  generate();
+};
+$("#btnRetry").onclick = () => {
+  if (busy || !cur) return;
+  cur.lastError = null;
+  const last = cur.msgs[cur.msgs.length - 1];
+  if (!last) return;
+  if (last.who === "narr") { if (last.opening) return; cur.msgs.pop(); }
+  generate();
+};
+
+/* ---------- play menu ---------- */
+function closeMenu() { $("#playMenu")?.remove(); }
+$("#playMenuBtn").onclick = e => {
+  e.stopPropagation();
+  if ($("#playMenu")) { closeMenu(); return; }
+  const m = document.createElement("div");
+  m.className = "menu"; m.id = "playMenu";
+  m.innerHTML = `<button data-a="memory">Pinned memory${cur.memory ? " ✓" : ""}</button><button data-a="info">About this story</button><button data-a="undo">Undo last turn</button><button data-a="restart" class="danger">Start over</button>`;
+  $("#play").append(m);
+  m.querySelectorAll("button").forEach(b => b.onclick = ev => {
+    ev.stopPropagation();
+    const a = b.dataset.a;
+    if (a === "restart") {
+      if (b.dataset.armed) { closeMenu(); if (busy) ctl?.abort(); const { kind, ref } = cur; setTimeout(() => startRun(kind, ref, true), 0); }
+      else { b.dataset.armed = "1"; b.textContent = "Tap again to erase this run"; }
+      return;
+    }
+    closeMenu();
+    if (a === "info") openDetailInfo();
+    if (a === "memory") openMemory();
+    if (a === "undo") undoTurn();
+  });
+};
+document.addEventListener("click", e => { if ($("#playMenu") && !e.target.closest("#playMenu")) closeMenu(); });
+function undoTurn() {
+  if (busy || !cur) return;
+  let i = cur.msgs.length - 1, removed = 0;
+  while (i >= 0 && !cur.msgs[i].opening) {
+    const m = cur.msgs[i]; cur.msgs.splice(i, 1); removed++;
+    if (m.who === "player" && !m.hidden) break;
+    i--;
+  }
+  if (!removed) { toast("Nothing to undo"); return; }
+  const lastN = [...cur.msgs].reverse().find(m => m.who === "narr");
+  if (lastN && lastN.opening) { const s = findSource(cur.kind, cur.ref); cur.choices = s.choices || []; } else cur.choices = [];
+  cur.lastError = null; saveRuns(); drawLog(); drawChoices(); updateComposer(); toast("Last turn undone");
+}
+function openDetailInfo() {
+  const s = findSource(cur.kind, cur.ref);
+  openSheet(`<div class="detail"><div class="detail-top">${coverHTML(s, { noTitle: true })}<div><h2>${esc(s.title || s.name)}</h2></div></div><p>${esc(s.synopsis || s.persona)}</p>${s.role ? `<div class="label">Your role</div><div class="role">${esc(s.role)}</div>` : ""}${(s.cast || []).length ? `<div class="label">Cast</div><div class="cast">${s.cast.map(([n, d]) => `<div><span class="av">${esc(n[0])}</span><div><b>${esc(n)}</b><span>${esc(d)}</span></div></div>`).join("")}</div>` : ""}<div class="actions"><button class="btn ghost" id="closeInfo">Back to story</button></div></div>`,
+    sc => sc.querySelector("#closeInfo").onclick = closeSheet);
+}
+function openMemory() {
+  openSheet(`<div class="form"><div class="field"><label for="memText" style="font-size:16px">Pinned memory</label><span class="hint">Facts the narrator should never forget in this story: names, promises, secrets, how a character feels about you.</span><textarea id="memText" style="min-height:140px" placeholder="e.g. Lisette knows about my Archive skill. I promised Mira I'd find her brother.">${esc(cur.memory || "")}</textarea></div><div class="actions"><button class="btn" id="memSave">Save memory</button></div></div>`,
+    sc => sc.querySelector("#memSave").onclick = () => { cur.memory = sc.querySelector("#memText").value.trim(); saveRuns(); closeSheet(); toast("Memory pinned"); });
+}
+
+/* ---------- boot ---------- */
+setTab("home");
+</script>
