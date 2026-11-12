@@ -211,6 +211,7 @@ svg { display: block; }
 .toast { position: absolute; left: 50%; bottom: 90px; transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-size: 14px; font-weight: 700; z-index: 60; animation: fade .2s ease; max-width: calc(100% - 32px); text-align: center; }
 .linkish { color: var(--accent); font-weight: 700; font-size: 13px; }
 
+.scene { display: block; width: 100%; max-width: 520px; border-radius: 14px; margin: 4px 0 12px; border: 1px solid var(--line); }
 /* ---------- audiobook + auto ---------- */
 .sysbox { margin: 0 0 .8em; padding: 10px 12px; border: 1px solid #7fe0ff66; background: var(--system-bg); border-radius: 10px; color: #dff6ff; font-size: 14.5px; line-height: 1.55; max-width: 64ch; }
 .sysbox .sl { display: block; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--system); font-weight: 700; margin-bottom: 3px; }
@@ -309,6 +310,8 @@ Falling leaves hang in the air. Feng Yao's palm freezes an inch above your skull
 
 A tiny girl in jade robes, no taller than your hand, appears on your shoulder and bows so deeply her sleeves brush the stone. {Lingxi}"Forgive my lateness, Your Divinity. Ten thousand years is a long time to sleep." She glances at Feng Yao's frozen palm and sniffs. {Lingxi}"Shall we begin?"`,
   choices: ["Ask Lingxi what 1 Divine Point can do", "\"Begin.\" Let time resume and face Feng Yao", "Look at Su Qinghe with divine sight"],
+  scenes: { "01-trial": "Bai Lian beaten on the trial platform under Feng Yao's boot", "02-timestop": "time frozen, the golden system window appears", "03-lingxi": "Lingxi the jade spirit appears or speaks", "04-qinghe": "Su Qinghe in white robes on a mountain pavilion", "05-awakening": "Bai Lian reveals divine power, floating with a golden halo", "06-burst": "an explosive qi blast or battle impact", "08-elder": "Elder Mu watching with suspicion in the sect hall" },
+  openingScene: "01-trial",
   status: "Realm: Mortal (sealed god) | Divinity: 0.1% | Faith: 1 | Divine Points: 1 | Authority: Time Stop | Exposure: Low"
 },
 {
@@ -1207,7 +1210,7 @@ function startRun(kind, id, fresh, opts = {}) {
       key, kind, ref: id, updated: Date.now(), memory: "",
       status: kind === "char" ? null : (s.status || null),
       choices: opening ? (s.choices || []) : [],
-      msgs: opening ? [{ who: "narr", text: opening, opening: true }] : []
+      msgs: opening ? [{ who: "narr", text: opening, opening: true, scene: s.openingScene }] : []
     };
     saveRuns();
   }
@@ -1264,7 +1267,7 @@ function msgHTML(m, idx) {
   const body = m.pending && !m.text ? `<div class="thinking" aria-label="Writing"><span></span><span></span><span></span></div>` : narrHTML(m.text, cur);
   const canPlay = !m.pending && m.text && Voice.engine();
   const on = reading && reading.run === cur && reading.mi === idx;
-  return `<div class="msg narr" data-i="${idx}"><div class="speaker"><i>${esc(sp.i)}</i>${esc(sp.n)}${canPlay ? `<button class="replay ${on ? "on" : ""}" data-play="${idx}" aria-label="${on ? "Stop reading" : "Read aloud"}"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 4V5L8 9zM16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M4 9v6h4l5 4V5L8 9z"/></svg></button>` : ""}</div><div class="body">${body}</div>${m.error ? `<div class="err" style="margin-top:10px">${esc(m.error)}</div>` : ""}</div>`;
+  return `<div class="msg narr" data-i="${idx}"><div class="speaker"><i>${esc(sp.i)}</i>${esc(sp.n)}${canPlay ? `<button class="replay ${on ? "on" : ""}" data-play="${idx}" aria-label="${on ? "Stop reading" : "Read aloud"}"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 4V5L8 9zM16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M4 9v6h4l5 4V5L8 9z"/></svg></button>` : ""}</div>${m.scene ? `<img class="scene" src="art/${esc(m.scene)}.webp" alt="" loading="lazy">` : ""}<div class="body">${body}</div>${m.error ? `<div class="err" style="margin-top:10px">${esc(m.error)}</div>` : ""}</div>`;
 }
 $("#log").addEventListener("click", e => {
   const b = e.target.closest("[data-play]"); if (!b || !cur) return;
@@ -1359,7 +1362,7 @@ STYLE: Second person ("you"), present tense, like a light novel or anime episode
 
 VOICES: The story is also read aloud with a different voice per character. Tag every line of spoken dialogue with the speaker's name in curly braces directly before the opening quote, for example {${exName}}"We have to go." Use names exactly as in the cast list (give new characters a short name and keep it), and tag the player's own spoken lines as {You}. The tags are hidden from the reader. If the story has a system, status screen or magical interface, its messages go in their own paragraph starting with [SYSTEM].
 
-FORMAT: Write only the story text first. Then on a new line write @@CHOICES followed by exactly three short, different next moves for the player (under 10 words each), one per line, each starting with "- ". Put spoken suggestions in double quotes. Then on a new line write @@BEST followed by only the number (1, 2 or 3) of the move that would lead to the most exciting, in-character next scene.${statusRule}
+FORMAT: Write only the story text first. Then on a new line write @@CHOICES followed by exactly three short, different next moves for the player (under 10 words each), one per line, each starting with "- ". Put spoken suggestions in double quotes. Then on a new line write @@BEST followed by only the number (1, 2 or 3) of the move that would lead to the most exciting, in-character next scene.${s.scenes ? `\nThen on a new line write @@SCENE followed by the id of the illustration that best matches this reply, or "none" if nothing fits well. Use each illustration rarely, only at strong moments. Illustrations: ${Object.entries(s.scenes).map(([k, v]) => k + " = " + v).join("; ")}.` : ""}${statusRule}
 Write nothing else after that.${opening}`;
 }
 function buildTurns(run) {
@@ -1385,9 +1388,10 @@ function parseReply(t) {
   if (cm) choices = cm[1].split("\n").map(l => l.trim()).filter(l => /^[-*•\d]/.test(l)).map(l => l.replace(/^([-*•]|\d+[.)])\s*/, "").trim()).filter(Boolean).slice(0, 3);
   const sm = t.match(/@@STATUS\s*([^\n]+)/);
   if (sm) status = sm[1].trim();
+  const scm = t.match(/@@SCENE\s*([\w-]+)/); const scene = scm ? scm[1] : null;
   const bm = t.match(/@@BEST\s*(\d)/);
   const best = bm ? clamp(Number(bm[1]), 1, 3) : 1;
-  return { story, choices, status, best };
+  return { story, choices, status, best, scene };
 }
 // A suggested move becomes a turn: a quoted line is speech, anything else is an action.
 function choiceToTurn(c, kind) {
@@ -1435,6 +1439,8 @@ async function generate() {
     const p = parseReply(res.text);
     msg.text = p.story || res.text.trim();
     run.choices = p.choices; run.best = p.best;
+    const src = findSource(run.kind, run.ref);
+    if (p.scene && src.scenes && src.scenes[p.scene]) msg.scene = p.scene;
     if (p.status && run.status) run.status = p.status;
     if (res.truncated) msg.error = "This reply was cut short. Tap Continue to pick it up.";
     ok = true;
